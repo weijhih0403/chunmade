@@ -2,17 +2,29 @@ import { prisma } from "@/lib/prisma";
 import { buildSchedule } from "@/lib/schedule-engine";
 import { SchedulePlanner } from "./schedule-planner";
 
+type Store = "SHUIDUI" | "ASAKUSA" | "TAIPEI_BAY";
+const STORE_LIST: Store[] = ["SHUIDUI", "ASAKUSA", "TAIPEI_BAY"];
+
+function parseStore(raw: string | undefined): Store {
+  if (raw === "ASAKUSA") return "ASAKUSA";
+  if (raw === "TAIPEI_BAY") return "TAIPEI_BAY";
+  return "SHUIDUI";
+}
+
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; store?: string }>;
 }) {
   const sp = await searchParams;
   const now = new Date();
-  const year = Number(sp.year) || now.getFullYear();
-  const month = Number(sp.month) || now.getMonth() + 1;
+  const defaultDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const year = Number(sp.year) || defaultDate.getFullYear();
+  const month = Number(sp.month) || defaultDate.getMonth() + 1;
+  const store = parseStore(sp.store);
 
   const employees = await prisma.employee.findMany({
+    where: { store },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
 
@@ -24,6 +36,7 @@ export default async function SchedulePage({
   const blocks = await prisma.shiftUnavailability.findMany({
     where: {
       date: { gte: start, lte: end },
+      employee: { store },
     },
   });
 
@@ -42,6 +55,8 @@ export default async function SchedulePage({
     <SchedulePlanner
       year={year}
       month={month}
+      store={store}
+      stores={STORE_LIST}
       employees={employees}
       blocks={blocks}
       assignments={assignments}

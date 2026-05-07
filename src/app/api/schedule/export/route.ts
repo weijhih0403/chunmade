@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import type { Store } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +11,18 @@ import {
 
 export const runtime = "nodejs";
 
+function parseStore(raw: string | null): Store {
+  if (raw === "ASAKUSA") return "ASAKUSA";
+  if (raw === "TAIPEI_BAY") return "TAIPEI_BAY";
+  return "SHUIDUI";
+}
+
+function storeLabel(store: Store): string {
+  if (store === "ASAKUSA") return "淺草";
+  if (store === "TAIPEI_BAY") return "台北灣";
+  return "水堆";
+}
+
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -19,6 +32,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const year = Number(searchParams.get("year"));
   const month = Number(searchParams.get("month"));
+  const store = parseStore(searchParams.get("store"));
 
   if (
     !Number.isFinite(year) ||
@@ -30,6 +44,7 @@ export async function GET(req: Request) {
   }
 
   const employees = await prisma.employee.findMany({
+    where: { store },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
   });
 
@@ -41,6 +56,7 @@ export async function GET(req: Request) {
   const blocks = await prisma.shiftUnavailability.findMany({
     where: {
       date: { gte: start, lte: end },
+      employee: { store },
     },
   });
 
@@ -58,13 +74,13 @@ export async function GET(req: Request) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "淳手作班表";
 
-  const sheet = workbook.addWorksheet(`${year}年${month}月`, {
+  const sheet = workbook.addWorksheet(`${storeLabel(store)}_${year}年${month}月`, {
     views: [{ state: "frozen", ySplit: 3 }],
   });
 
   sheet.getCell("A1").value = "班表說明";
   sheet.getCell("B1").value =
-    "每日早班 2 人（10:00–17:00）、晚班 2 人（17:00–23:00）；同人同日不重複早＋晚；勾選網頁「不可排班」後自動排出。";
+    `店別：${storeLabel(store)}。每日早班 2 人（10:00–17:00）、晚班 2 人（17:00–23:00）；同人同日不重複早＋晚；勾選網頁「不可排班」後自動排出。`;
 
   sheet.mergeCells("B1:E1");
 
@@ -107,7 +123,7 @@ export async function GET(req: Request) {
   ];
 
   const meta = workbook.addWorksheet("排班摘要");
-  meta.addRow(["自動排班摘要"]);
+  meta.addRow([`自動排班摘要（${storeLabel(store)}）`]);
   meta.addRow([]);
   if (summaryWarnings.length === 0) {
     meta.addRow(["本月每日早／晚班皆已各排滿 2 人（或無員工資料）。"]);
@@ -130,7 +146,7 @@ export async function GET(req: Request) {
 
   const buffer = await workbook.xlsx.writeBuffer();
 
-  const filename = `班表_${year}年${month}月.xlsx`;
+  const filename = `班表_${storeLabel(store)}_${year}年${month}月.xlsx`;
 
   return new NextResponse(Buffer.from(buffer), {
     headers: {

@@ -4,6 +4,7 @@ import type {
   EmploymentType,
   PreferredShift,
   ShiftKind,
+  Store,
 } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
@@ -22,15 +23,24 @@ function parseEmploymentType(raw: unknown): EmploymentType {
   return String(raw) === "PART_TIME" ? "PART_TIME" : "FULL_TIME";
 }
 
+function parseStore(raw: unknown): Store {
+  const v = String(raw);
+  if (v === "ASAKUSA") return "ASAKUSA";
+  if (v === "TAIPEI_BAY") return "TAIPEI_BAY";
+  return "SHUIDUI";
+}
+
 export async function createEmployee(formData: FormData) {
   await requireSession();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請輸入姓名" };
 
+  const store = parseStore(formData.get("store"));
   const preferredShift = parsePreferredShift(formData.get("preferredShift"));
   const employmentType = parseEmploymentType(formData.get("employmentType"));
 
   const last = await prisma.employee.findFirst({
+    where: { store },
     orderBy: { sortOrder: "desc" },
     select: { sortOrder: true },
   });
@@ -38,6 +48,7 @@ export async function createEmployee(formData: FormData) {
   await prisma.employee.create({
     data: {
       name,
+      store,
       sortOrder: (last?.sortOrder ?? 0) + 1,
       preferredShift,
       employmentType,

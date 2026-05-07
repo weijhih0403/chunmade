@@ -1,11 +1,16 @@
 "use client";
 
-import type { Employee, ShiftKind, ShiftUnavailability } from "@prisma/client";
+import type {
+  Employee,
+  ShiftKind,
+  ShiftUnavailability,
+  Store,
+} from "@prisma/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useTransition } from "react";
 import type { DayAssignment } from "@/lib/schedule-engine";
-import { dateKey, formatShiftNames } from "@/lib/schedule-engine";
+import { dateKey, formatShiftNames, weekdayZh } from "@/lib/schedule-engine";
 import {
   createEmployee,
   deleteEmployee,
@@ -26,9 +31,17 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
+function storeLabel(store: Store): string {
+  if (store === "ASAKUSA") return "淺草";
+  if (store === "TAIPEI_BAY") return "台北灣";
+  return "水堆";
+}
+
 export function SchedulePlanner({
   year,
   month,
+  store,
+  stores,
   employees,
   blocks,
   assignments,
@@ -36,6 +49,8 @@ export function SchedulePlanner({
 }: {
   year: number;
   month: number;
+  store: Store;
+  stores: Store[];
   employees: Employee[];
   blocks: BlockRow[];
   assignments: DayAssignment[];
@@ -56,14 +71,14 @@ export function SchedulePlanner({
   const next =
     month >= 12 ? { y: year + 1, m: 1 } : { y: year, m: month + 1 };
 
-  const exportHref = `/api/schedule/export?year=${year}&month=${month}`;
+  const exportHref = `/api/schedule/export?year=${year}&month=${month}&store=${store}`;
 
   return (
     <div className="space-y-10 sm:space-y-12">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--foreground)] sm:text-3xl">
-            班表
+            班表（{storeLabel(store)}）
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
             先設定員工姓名；選擇月份後，勾選各員工「不可排」的早班（10:00–17:00）或晚班（17:00–23:00）時段。系統會避開這些時段，自動排出每日早班與晚班各{" "}
@@ -78,8 +93,21 @@ export function SchedulePlanner({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {stores.map((s) => (
+            <Link
+              key={s}
+              href={`/dashboard/schedule?year=${year}&month=${month}&store=${s}`}
+              className={`rounded-full border px-3 py-2 text-sm sm:px-4 ${
+                s === store
+                  ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--foreground)]"
+                  : "border-[var(--stroke)] hover:border-[var(--accent)]"
+              }`}
+            >
+              {storeLabel(s)}
+            </Link>
+          ))}
           <Link
-            href={`/dashboard/schedule?year=${prev.y}&month=${prev.m}`}
+            href={`/dashboard/schedule?year=${prev.y}&month=${prev.m}&store=${store}`}
             className="rounded-full border border-[var(--stroke)] px-3 py-2 text-sm hover:border-[var(--accent)] sm:px-4"
           >
             ← 上月
@@ -88,7 +116,7 @@ export function SchedulePlanner({
             {year} 年 {month} 月
           </span>
           <Link
-            href={`/dashboard/schedule?year=${next.y}&month=${next.m}`}
+            href={`/dashboard/schedule?year=${next.y}&month=${next.m}&store=${store}`}
             className="rounded-full border border-[var(--stroke)] px-3 py-2 text-sm hover:border-[var(--accent)] sm:px-4"
           >
             下月 →
@@ -109,6 +137,7 @@ export function SchedulePlanner({
         <form
           action={(fd) => {
             startTransition(async () => {
+              fd.set("store", store);
               await createEmployee(fd);
               router.refresh();
             });
@@ -396,6 +425,55 @@ export function SchedulePlanner({
                 <tr key={a.date}>
                   <td className="px-4 py-3 whitespace-nowrap text-[var(--foreground)]">
                     {a.date}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--foreground)]">
+                    {formatShiftNames(a.earlyStaff)}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--foreground)]">
+                    {formatShiftNames(a.lateStaff)}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+                    {a.warnings.join("；") || "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg text-[var(--foreground)]">
+            Excel 預覽（目前排班）
+          </h2>
+          <span className="text-xs text-[var(--muted)]">
+            此欄位內容與下載的 Excel 排班明細一致
+          </span>
+        </div>
+        <div className="overflow-x-auto rounded-2xl border border-[var(--stroke)] bg-[var(--elevated)] shadow-[var(--shadow-soft)]">
+          <table className="w-full min-w-[620px] text-sm">
+            <thead className="border-b border-[var(--stroke)] bg-[var(--surface)] text-[var(--muted)]">
+              <tr>
+                <th className="px-4 py-3 text-left font-medium">日期</th>
+                <th className="px-4 py-3 text-left font-medium">星期</th>
+                <th className="px-4 py-3 text-left font-medium">
+                  早班（2人，10:00–17:00）
+                </th>
+                <th className="px-4 py-3 text-left font-medium">
+                  晚班（2人，17:00–23:00）
+                </th>
+                <th className="px-4 py-3 text-left font-medium">備註</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--stroke)]">
+              {assignments.map((a: DayAssignment) => (
+                <tr key={`excel-${a.date}`}>
+                  <td className="px-4 py-3 whitespace-nowrap text-[var(--foreground)]">
+                    {a.date}
+                  </td>
+                  <td className="px-4 py-3 text-[var(--foreground)]">
+                    週{weekdayZh(a.date)}
                   </td>
                   <td className="px-4 py-3 text-[var(--foreground)]">
                     {formatShiftNames(a.earlyStaff)}

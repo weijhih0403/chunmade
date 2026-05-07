@@ -39,9 +39,16 @@ enum EmploymentType {
   PART_TIME
 }
 
+enum Store {
+  SHUIDUI
+  ASAKUSA
+  TAIPEI_BAY
+}
+
 model Employee {
   id               String          @id @default(cuid())
   name             String
+  store            Store           @default(SHUIDUI)
   sortOrder        Int             @default(0)
   preferredShift   PreferredShift  @default(EARLY)
   employmentType   EmploymentType  @default(FULL_TIME)
