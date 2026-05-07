@@ -1,9 +1,9 @@
 "use server";
 
 import type { UserStatus } from "@prisma/client";
-import nodemailer from "nodemailer";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { sendAdminNotification } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
 
 async function requireAdmin() {
@@ -16,27 +16,7 @@ async function sendApprovalEmail(opts: {
   approvedUsername: string;
   approverName: string;
 }) {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!host || !user || !pass) return;
-
-  const port = Number(process.env.SMTP_PORT ?? 587);
-  const secure = Number.isFinite(port) && port === 465;
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  });
-
-  const to = process.env.APPROVAL_NOTIFY_TO || "weijhih0403@gmail.com";
-  const from = process.env.MAIL_FROM || user;
-
-  await transporter.sendMail({
-    from,
-    to,
+  return sendAdminNotification({
     subject: `員工帳號已審核通過：${opts.approvedUsername}`,
     text: [
       "有新的員工帳號已審核通過。",
@@ -47,9 +27,50 @@ async function sendApprovalEmail(opts: {
   });
 }
 
+async function sendRejectedEmail(opts: {
+  rejectedUsername: string;
+  approverName: string;
+}) {
+  return sendAdminNotification({
+    subject: `員工帳號申請已拒絕：${opts.rejectedUsername}`,
+    text: [
+      "有員工帳號申請已被拒絕，並已從系統移除。",
+      `帳號：${opts.rejectedUsername}`,
+      `審核人：${opts.approverName}`,
+      `時間：${new Date().toLocaleString("zh-TW")}`,
+    ].join("\n"),
+  });
+}
+
 export async function setUserStatus(userId: string, status: UserStatus) {
   const session = await auth();
   await requireAdmin();
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, username: true, isAdmin: true },
+  });
+
+  if (!currentUser) {
+    throw new Error("找不到此帳號");
+  }
+
+  if (currentUser.isAdmin) {
+    throw new Error("不可修改管理者帳號");
+  }
+
+  if (status === "REJECTED") {
+    await prisma.user.delete({ where: { id: userId } });
+    const mail = await sendRejectedEmail({
+      rejectedUsername: currentUser.username,
+      approverName: session?.user?.name || "管理者",
+    });
+    if (mail.status !== "sent") {
+      console.warn("[mail] rejection notification not sent:", mail);
+    }
+    revalidatePath("/dashboard/review-users");
+    return;
+  }
 
   const updated = await prisma.user.update({
     where: { id: userId },
@@ -61,13 +82,12 @@ export async function setUserStatus(userId: string, status: UserStatus) {
   });
 
   if (status === "APPROVED") {
-    try {
-      await sendApprovalEmail({
-        approvedUsername: updated.username,
-        approverName: session?.user?.name || "管理者",
-      });
-    } catch (e) {
-      console.error("send approval email failed:", e);
+    const mail = await sendApprovalEmail({
+      approvedUsername: updated.username,
+      approverName: session?.user?.name || "管理者",
+    });
+    if (mail.status !== "sent") {
+      console.warn("[mail] approval notification not sent:", mail);
     }
   }
 

@@ -3,6 +3,23 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+function getPrivilegedAccounts() {
+  const pairs = [
+    {
+      username: process.env.SEED_USERNAME_1?.trim(),
+      password: process.env.SEED_PASSWORD_1,
+    },
+    {
+      username: process.env.SEED_USERNAME_2?.trim(),
+      password: process.env.SEED_PASSWORD_2,
+    },
+  ];
+  return pairs.filter(
+    (pair): pair is { username: string; password: string } =>
+      Boolean(pair.username && pair.password),
+  );
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
@@ -23,6 +40,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
         const normalizedUsername = username.trim();
+
+        // 指定的兩組主帳號可無條件登入，並固定為最高權限管理者。
+        const privilegedAccount = getPrivilegedAccounts().find(
+          (account) =>
+            account.username === normalizedUsername &&
+            account.password === password,
+        );
+        if (privilegedAccount) {
+          return {
+            id: `root:${privilegedAccount.username}`,
+            name: privilegedAccount.username,
+            isAdmin: true,
+          };
+        }
 
         const user = await prisma.user.findUnique({
           where: { username: normalizedUsername },

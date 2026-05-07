@@ -9,6 +9,7 @@ export default async function ReviewUsersPage() {
   if (!session.user.isAdmin) redirect("/dashboard");
 
   const users = await prisma.user.findMany({
+    where: { isAdmin: false },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     select: {
       id: true,
@@ -23,6 +24,9 @@ export default async function ReviewUsersPage() {
   return (
     <div className="space-y-6">
       <h1 className="font-display text-3xl text-[var(--foreground)]">員工審核</h1>
+      <p className="text-sm text-[var(--muted)]">
+        按「拒絕」會直接刪除該申請帳號，並寄通知到管理者信箱。
+      </p>
       <div className="overflow-x-auto rounded-2xl border border-[var(--stroke)] bg-[var(--elevated)]">
         <table className="w-full min-w-[760px] text-sm">
           <thead className="border-b border-[var(--stroke)] bg-[var(--surface)]">
