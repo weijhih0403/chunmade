@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  status       UserStatus @default(PENDING)
+  isAdmin      Boolean    @default(false)
+  approvedAt   DateTime?
+  createdAt    DateTime @default(now())
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ShiftKind {
+  EARLY
+  LATE
+}
+
+/** 員工「偏好／預設」班次（排班時在總班數相同下優先排此班） */
+enum PreferredShift {
+  EARLY
+  LATE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+}
+
+model Employee {
+  id               String          @id @default(cuid())
+  name             String
+  sortOrder        Int             @default(0)
+  preferredShift   PreferredShift  @default(EARLY)
+  employmentType   EmploymentType  @default(FULL_TIME)
+  createdAt        DateTime        @default(now())
+  unavailabilities ShiftUnavailability[]
+}
+
+model ShiftUnavailability {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       String
+  shift      ShiftKind
+
+  @@unique([employeeId, date, shift])
+}
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  name      String
+  quantity  Int      @default(0)
+  unit      String   @default("件")
+  notes     String   @default("")
+  updatedAt DateTime @updatedAt
+}
