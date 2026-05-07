@@ -1,7 +1,41 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
+
+async function sendNewApplicationEmail(username: string) {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return;
+
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  const secure = Number.isFinite(port) && port === 465;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+
+  const to = process.env.APPROVAL_NOTIFY_TO || "weijhih0403@gmail.com";
+  const from = process.env.MAIL_FROM || user;
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: `【待審核】新的員工帳號申請：${username}`,
+    text: [
+      "有新的員工帳號送出申請，請至後台審核。",
+      `帳號：${username}`,
+      `時間：${new Date().toLocaleString("zh-TW")}`,
+      "",
+      "審核頁：/dashboard/review-users",
+    ].join("\n"),
+  });
+}
 
 export async function submitApplication(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
@@ -36,6 +70,13 @@ export async function submitApplication(formData: FormData) {
         status: "PENDING",
       },
     });
+
+    try {
+      await sendNewApplicationEmail(username);
+    } catch (e) {
+      console.error("send new application email failed:", e);
+    }
+
     return { ok: true };
   } catch (e) {
     console.error("submitApplication failed:", e);
