@@ -26,7 +26,7 @@ export default function LoginPage() {
             ← 返回首頁
           </Link>
           <p className="mt-10 font-display text-4xl font-medium leading-tight tracking-tight text-[var(--cream)] sm:text-5xl">
-            淳手作
+            淳手作/淺草｜純手工甜品店
             <span className="block mt-2 text-2xl font-normal text-[var(--muted)] sm:text-3xl">
               員工登入
             </span>

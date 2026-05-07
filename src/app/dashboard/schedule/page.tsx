@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { buildSchedule } from "@/lib/schedule-engine";
 import { SchedulePlanner } from "./schedule-planner";
@@ -22,6 +23,8 @@ export default async function SchedulePage({
   const year = Number(sp.year) || defaultDate.getFullYear();
   const month = Number(sp.month) || defaultDate.getMonth() + 1;
   const store = parseStore(sp.store);
+  const session = await auth();
+  const canEdit = Boolean(session?.user?.isAdmin);
 
   const employees = await prisma.employee.findMany({
     where: { store },
@@ -57,6 +60,7 @@ export default async function SchedulePage({
       month={month}
       store={store}
       stores={STORE_LIST}
+      canEdit={canEdit}
       employees={employees}
       blocks={blocks}
       assignments={assignments}

@@ -72,7 +72,7 @@ export async function GET(req: Request) {
   );
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "淳手作班表";
+  workbook.creator = "淳手作/淺草｜純手工甜品店 · 班表";
 
   const sheet = workbook.addWorksheet(`${storeLabel(store)}_${year}年${month}月`, {
     views: [{ state: "frozen", ySplit: 3 }],

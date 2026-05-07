@@ -14,8 +14,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "淳手作｜手感生活與員工登入",
-  description: "精緻的手工品牌展示站，支援帳號密碼登入與員工專區。",
+  title: "淳手作/淺草｜純手工甜品店",
+  description: "淳手作/淺草純手工甜品店 · 精緻手作甜點、細膩服務與員工排班管理。",
 };
 
 export default function RootLayout({

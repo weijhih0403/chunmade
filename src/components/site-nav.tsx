@@ -11,7 +11,7 @@ export async function SiteNav() {
           href="/"
           className="font-display text-xl tracking-tight text-[var(--foreground)]"
         >
-          淳手作
+          淳手作/淺草｜純手工甜品店
         </Link>
         <div className="flex items-center gap-4">
           {session?.user ? (

@@ -59,7 +59,7 @@ export async function sendAdminNotification(opts: {
 
   try {
     const info = await transporter.sendMail({
-      from: { name: "淳手作", address: from },
+      from: { name: "淳手作/淺草｜純手工甜品店", address: from },
       to,
       subject: opts.subject,
       text: opts.text,

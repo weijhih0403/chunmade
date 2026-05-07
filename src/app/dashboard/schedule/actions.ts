@@ -13,6 +13,13 @@ import { prisma } from "@/lib/prisma";
 async function requireSession() {
   const session = await auth();
   if (!session?.user) throw new Error("未登入");
+  return session;
+}
+
+async function requireAdmin() {
+  const session = await requireSession();
+  if (!session.user.isAdmin) throw new Error("僅管理者可修改班表設定");
+  return session;
 }
 
 function parsePreferredShift(raw: unknown): PreferredShift {
@@ -31,7 +38,7 @@ function parseStore(raw: unknown): Store {
 }
 
 export async function createEmployee(formData: FormData) {
-  await requireSession();
+  await requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "請輸入姓名" };
 
@@ -64,7 +71,7 @@ export async function updateEmployeeMeta(
   preferredShift: PreferredShift,
   employmentType: EmploymentType,
 ) {
-  await requireSession();
+  await requireAdmin();
   await prisma.employee.update({
     where: { id: employeeId },
     data: { preferredShift, employmentType },
@@ -73,7 +80,7 @@ export async function updateEmployeeMeta(
 }
 
 export async function deleteEmployee(employeeId: string) {
-  await requireSession();
+  await requireAdmin();
   await prisma.employee.delete({ where: { id: employeeId } });
   revalidatePath("/dashboard/schedule");
 }
@@ -84,7 +91,7 @@ export async function setShiftUnavailable(
   shift: ShiftKind,
   unavailable: boolean,
 ) {
-  await requireSession();
+  await requireAdmin();
 
   if (unavailable) {
     await prisma.shiftUnavailability

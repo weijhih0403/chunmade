@@ -42,6 +42,7 @@ export function SchedulePlanner({
   month,
   store,
   stores,
+  canEdit,
   employees,
   blocks,
   assignments,
@@ -51,6 +52,7 @@ export function SchedulePlanner({
   month: number;
   store: Store;
   stores: Store[];
+  canEdit: boolean;
   employees: Employee[];
   blocks: BlockRow[];
   assignments: DayAssignment[];
@@ -134,6 +136,11 @@ export function SchedulePlanner({
         <h2 className="font-display text-lg text-[var(--foreground)]">
           員工名單
         </h2>
+        {!canEdit ? (
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            目前為唯讀模式：僅最高權限使用者可新增員工、修改不可排班與調整排班設定。
+          </p>
+        ) : null}
         <form
           action={(fd) => {
             startTransition(async () => {
@@ -149,7 +156,7 @@ export function SchedulePlanner({
             <input
               name="name"
               required
-              disabled={pending}
+              disabled={pending || !canEdit}
               placeholder="例如：王小明"
               className="mt-1 min-w-[160px] rounded-xl border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             />
@@ -159,7 +166,7 @@ export function SchedulePlanner({
             <select
               name="preferredShift"
               defaultValue="EARLY"
-              disabled={pending}
+              disabled={pending || !canEdit}
               className="mt-1 min-w-[140px] rounded-xl border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               <option value="EARLY">早班</option>
@@ -171,7 +178,7 @@ export function SchedulePlanner({
             <select
               name="employmentType"
               defaultValue="FULL_TIME"
-              disabled={pending}
+              disabled={pending || !canEdit}
               className="mt-1 min-w-[120px] rounded-xl border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-[var(--foreground)] outline-none focus:border-[var(--accent)]"
             >
               <option value="FULL_TIME">正職</option>
@@ -180,7 +187,7 @@ export function SchedulePlanner({
           </label>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || !canEdit}
             className="rounded-full bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-[var(--accent-foreground)] hover:brightness-110 disabled:opacity-60"
           >
             新增員工
@@ -202,7 +209,7 @@ export function SchedulePlanner({
                     <span className="whitespace-nowrap">預設班次</span>
                     <select
                       value={e.preferredShift}
-                      disabled={pending}
+                      disabled={pending || !canEdit}
                       onChange={(ev) =>
                         startTransition(async () => {
                           await updateEmployeeMeta(
@@ -223,7 +230,7 @@ export function SchedulePlanner({
                     <span className="whitespace-nowrap">身分</span>
                     <select
                       value={e.employmentType}
-                      disabled={pending}
+                      disabled={pending || !canEdit}
                       onChange={(ev) =>
                         startTransition(async () => {
                           await updateEmployeeMeta(
@@ -244,7 +251,7 @@ export function SchedulePlanner({
                   </label>
                   <button
                     type="button"
-                    disabled={pending}
+                    disabled={pending || !canEdit}
                     onClick={() =>
                       startTransition(async () => {
                         await deleteEmployee(e.id);
@@ -336,7 +343,7 @@ export function SchedulePlanner({
                           <td className="border-r border-[var(--stroke)] px-0.5 py-1 text-center align-middle">
                             <input
                               type="checkbox"
-                              disabled={pending}
+                              disabled={pending || !canEdit}
                               checked={earlyOn}
                               onChange={(e) =>
                                 startTransition(async () => {
@@ -356,7 +363,7 @@ export function SchedulePlanner({
                           <td className="border-r border-[var(--stroke)] px-0.5 py-1 text-center align-middle">
                             <input
                               type="checkbox"
-                              disabled={pending}
+                              disabled={pending || !canEdit}
                               checked={lateOn}
                               onChange={(e) =>
                                 startTransition(async () => {
