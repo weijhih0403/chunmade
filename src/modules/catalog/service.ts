@@ -29,6 +29,11 @@ export async function listItems(
   });
 }
 
+export async function getItem(actor: Actor, id: string) {
+  const scope = companyScope(actor);
+  return prisma.item.findFirst({ where: { ...scope, id, deletedAt: null } });
+}
+
 export async function getCatalogFormData(actor: Actor) {
   const scope = companyScope(actor);
   const [categories, units] = await Promise.all([

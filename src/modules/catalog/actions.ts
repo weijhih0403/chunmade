@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission, companyScope } from "@/lib/permissions";
 import { writeAudit } from "@/lib/audit";
-import { ConflictError } from "@/lib/errors";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import { type FormState, toFormError } from "@/lib/forms";
 import { itemSchema, categorySchema, unitSchema } from "./schemas";
 
@@ -66,6 +66,77 @@ export async function createItemAction(_prev: FormState, formData: FormData): Pr
 
     revalidatePath("/dashboard/items");
     return { ok: true, message: `商品「${item.name}」已建立` };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
+export async function updateItemAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const actor = await requirePermission("catalog.manage");
+    const scope = companyScope(actor);
+    const id = String(formData.get("id") ?? "");
+    const existing = await prisma.item.findFirst({ where: { ...scope, id, deletedAt: null } });
+    if (!existing) throw new NotFoundError("找不到商品");
+
+    // SKU 不可修改：沿用既有值
+    const data = itemSchema.parse({
+      sku: existing.sku,
+      barcode: formData.get("barcode") ?? "",
+      name: formData.get("name"),
+      type: formData.get("type"),
+      categoryId: formData.get("categoryId") ?? "",
+      baseUnitId: formData.get("baseUnitId"),
+      taxType: formData.get("taxType") ?? existing.taxType,
+      price: formData.get("price") ?? "0",
+      standardCost: formData.get("standardCost") ?? "0",
+      trackStock: formData.get("trackStock") === "on" || formData.get("trackStock") === "true",
+      safetyStock: formData.get("safetyStock") ?? "0",
+      reorderPoint: formData.get("reorderPoint") ?? "0",
+      shelfLifeDays: (formData.get("shelfLifeDays") as string) ?? "",
+    });
+
+    await prisma.$transaction(async (tx) => {
+      const updated = await tx.item.update({
+        where: { id },
+        data: {
+          barcode: data.barcode || null,
+          name: data.name,
+          type: data.type,
+          categoryId: data.categoryId || null,
+          baseUnitId: data.baseUnitId,
+          taxType: data.taxType,
+          price: data.price,
+          standardCost: data.standardCost,
+          trackStock: data.trackStock,
+          safetyStock: data.safetyStock,
+          reorderPoint: data.reorderPoint,
+          shelfLifeDays: data.shelfLifeDays,
+        },
+      });
+      await writeAudit(tx, {
+        companyId: scope.companyId,
+        userId: actor.id,
+        action: "UPDATE",
+        entityType: "Item",
+        entityId: id,
+        before: {
+          name: existing.name,
+          price: existing.price.toString(),
+          standardCost: existing.standardCost.toString(),
+          trackStock: existing.trackStock,
+        },
+        after: {
+          name: updated.name,
+          price: updated.price.toString(),
+          standardCost: updated.standardCost.toString(),
+          trackStock: updated.trackStock,
+        },
+      });
+    });
+
+    revalidatePath("/dashboard/items");
+    return { ok: true, message: `商品「${data.name}」已更新` };
   } catch (err) {
     return toFormError(err);
   }

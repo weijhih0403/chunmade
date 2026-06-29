@@ -42,6 +42,7 @@ export default async function ItemsPage() {
               <TH className="text-right">售價</TH>
               <TH className="text-right">標準成本</TH>
               <TH>庫管</TH>
+              {canManage && <TH></TH>}
             </tr>
           </THead>
           <tbody>
@@ -59,6 +60,16 @@ export default async function ItemsPage() {
                 <TD>
                   {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
                 </TD>
+                {canManage && (
+                  <TD>
+                    <Link
+                      href={`/dashboard/items/${it.id}/edit`}
+                      className="text-amber-700 hover:underline"
+                    >
+                      編輯
+                    </Link>
+                  </TD>
+                )}
               </TR>
             ))}
           </tbody>
