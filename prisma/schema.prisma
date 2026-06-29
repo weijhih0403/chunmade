@@ -1,0 +1,1591 @@
+// 淳手作 ERP - Prisma Schema
+// 設計原則：
+//  - 多租戶欄位：大部分業務表帶 companyId / storeId（以純量索引欄位實作，避免 Company 背向關聯爆炸）
+//  - 金額一律 Decimal(18,4)，數量 Decimal(18,4)
+//  - 重要資料軟刪除（deletedAt），單據以狀態流轉，不可直接刪除
+//  - 庫存以 StockMovement（不可變異動帳）+ StockBalance（結餘）管理
+//  - 稽核欄位：createdBy / updatedBy 以使用者 ID 純量儲存
+// 詳見 docs/DATABASE_DESIGN.md 與 docs/ERD.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Enums
+// ============================================================
+
+enum RoleName {
+  OWNER
+  ADMIN
+  MANAGER
+  CASHIER
+  WAREHOUSE
+  PRODUCTION
+  ACCOUNTANT
+  STAFF
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ItemType {
+  RAW_MATERIAL
+  SEMI_FINISHED
+  FINISHED_GOOD
+  SALE_ITEM
+  SERVICE
+}
+
+enum StockMovementType {
+  PURCHASE_RECEIPT
+  SALE
+  PRODUCTION_ISSUE
+  PRODUCTION_RECEIPT
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  WASTE
+  RETURN_IN
+  RETURN_OUT
+  INITIAL
+}
+
+enum PurchaseRequestStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CONVERTED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+  CLOSED
+}
+
+enum ProductionOrderStatus {
+  DRAFT
+  RELEASED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TransferStatus {
+  DRAFT
+  PENDING
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum StockCountStatus {
+  DRAFT
+  COUNTING
+  COMPLETED
+  CANCELLED
+}
+
+enum SalesOrderStatus {
+  DRAFT
+  PENDING
+  PAID
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum OrderChannel {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  LINE_PAY
+  MOBILE_PAY
+  BANK_TRANSFER
+  STORED_VALUE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum PrintJobStatus {
+  PENDING
+  PRINTING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum CashShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum AttendanceStatus {
+  NORMAL
+  LATE
+  EARLY_LEAVE
+  ABSENT
+  OVERTIME
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  OFFICIAL
+  MARRIAGE
+  FUNERAL
+  MATERNITY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LoyaltyTransactionType {
+  EARN
+  REDEEM
+  ADJUST
+  EXPIRE
+}
+
+enum StoredValueTransactionType {
+  TOPUP
+  SPEND
+  REFUND
+  ADJUST
+}
+
+enum NotificationLevel {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum TaxType {
+  TAXABLE
+  TAX_FREE
+  ZERO_RATED
+}
+
+// ============================================================
+// 組織 / 多租戶
+// ============================================================
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String
+  taxId     String?
+  phone     String?
+  address   String?
+  timezone  String    @default("Asia/Taipei")
+  currency  String    @default("TWD")
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  stores     Store[]
+  warehouses Warehouse[]
+}
+
+model Store {
+  id        String    @id @default(cuid())
+  companyId String
+  code      String
+  name      String
+  phone     String?
+  address   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  company    Company     @relation(fields: [companyId], references: [id])
+  warehouses Warehouse[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Warehouse {
+  id        String    @id @default(cuid())
+  companyId String
+  storeId   String?
+  code      String
+  name      String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  company   Company           @relation(fields: [companyId], references: [id])
+  store     Store?            @relation(fields: [storeId], references: [id])
+  locations StorageLocation[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([storeId])
+}
+
+model StorageLocation {
+  id          String    @id @default(cuid())
+  companyId   String
+  warehouseId String
+  code        String
+  name        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@unique([warehouseId, code])
+  @@index([companyId])
+  @@index([warehouseId])
+}
+
+// ============================================================
+// 認證 / 使用者 / RBAC
+// ============================================================
+
+model User {
+  id            String     @id @default(cuid())
+  companyId     String?
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  status        UserStatus @default(PENDING)
+  isActive      Boolean    @default(true)
+
+  // 帳號審核流程
+  appliedAt  DateTime  @default(now())
+  approvedAt DateTime?
+  approvedBy String?
+  rejectedAt DateTime?
+  rejectReason String?
+
+  // 登入失敗鎖定
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  accounts   Account[]
+  sessions   Session[]
+  userRoles  UserRole[]
+  storeUsers StoreUser[]
+  employee   Employee?
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        RoleName @unique
+  label       String
+  description String?
+  isSystem    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  // 例如 "inventory.read"、"purchase.approve"
+  key         String   @unique
+  label       String
+  module      String
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id        String  @id @default(cuid())
+  userId    String
+  roleId    String
+  // 角色可限定於某門市（null 表示全公司）
+  storeId   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, storeId])
+  @@index([userId])
+}
+
+// 使用者可存取的門市範圍限制
+model StoreUser {
+  id        String   @id @default(cuid())
+  userId    String
+  storeId   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@index([storeId])
+}
+
+// 使用者可存取的倉庫範圍限制
+model WarehouseUser {
+  id          String   @id @default(cuid())
+  userId      String
+  warehouseId String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, warehouseId])
+  @@index([userId])
+  @@index([warehouseId])
+}
+
+// ============================================================
+// 員工 / 排班 / 出勤
+// ============================================================
+
+model Department {
+  id        String    @id @default(cuid())
+  companyId String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  employees Employee[]
+
+  @@index([companyId])
+}
+
+model Position {
+  id        String    @id @default(cuid())
+  companyId String
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  employees Employee[]
+
+  @@index([companyId])
+}
+
+model EmploymentType {
+  id        String    @id @default(cuid())
+  companyId String
+  name      String // 正職 / 兼職 / 工讀
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  employees Employee[]
+
+  @@index([companyId])
+}
+
+model Employee {
+  id               String    @id @default(cuid())
+  companyId        String
+  userId           String?   @unique
+  employeeNo       String
+  name             String
+  phone            String?
+  email            String?
+  departmentId     String?
+  positionId       String?
+  employmentTypeId String?
+  primaryStoreId   String?
+  hireDate         DateTime?
+  hourlyRate       Decimal?  @db.Decimal(18, 4)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  user           User?           @relation(fields: [userId], references: [id])
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  position       Position?       @relation(fields: [positionId], references: [id])
+  employmentType EmploymentType? @relation(fields: [employmentTypeId], references: [id])
+
+  preferences EmployeePreference[]
+  schedules   Schedule[]
+  attendances Attendance[]
+  leaves      LeaveRequest[]
+
+  @@unique([companyId, employeeNo])
+  @@index([companyId])
+  @@index([primaryStoreId])
+}
+
+model Shift {
+  id        String    @id @default(cuid())
+  companyId String
+  storeId   String?
+  code      String
+  name      String // 早班 / 午班 / 晚班
+  startTime String // "08:00"
+  endTime   String // "16:00"
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  schedules   Schedule[]
+  preferences EmployeePreference[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+// 員工偏好班別 / 可排班時段
+model EmployeePreference {
+  id         String   @id @default(cuid())
+  companyId  String
+  employeeId String
+  shiftId    String?
+  // 0=週日 ... 6=週六
+  weekday    Int
+  available  Boolean  @default(true)
+  preference Int      @default(0) // 越大越偏好
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shift    Shift?   @relation(fields: [shiftId], references: [id])
+
+  @@index([companyId])
+  @@index([employeeId])
+}
+
+model Schedule {
+  id         String    @id @default(cuid())
+  companyId  String
+  storeId    String
+  employeeId String
+  shiftId    String
+  workDate   DateTime  @db.Date
+  startAt    DateTime
+  endAt      DateTime
+  note       String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  createdBy  String?
+  deletedAt  DateTime?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  shift    Shift    @relation(fields: [shiftId], references: [id])
+
+  @@unique([employeeId, workDate, shiftId])
+  @@index([companyId])
+  @@index([storeId])
+  @@index([workDate])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  companyId    String
+  storeId      String
+  employeeId   String
+  scheduleId   String?
+  workDate     DateTime         @db.Date
+  clockInAt    DateTime?
+  clockOutAt   DateTime?
+  status       AttendanceStatus @default(NORMAL)
+  lateMinutes  Int              @default(0)
+  earlyMinutes Int              @default(0)
+  overtimeMinutes Int           @default(0)
+  // 打卡來源紀錄
+  clockInIp    String?
+  clockInDevice String?
+  qrTokenId    String?
+  note         String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([companyId])
+  @@index([storeId])
+  @@index([employeeId])
+  @@index([workDate])
+}
+
+// 動態打卡 QR Code Token
+model AttendanceQrToken {
+  id        String   @id @default(cuid())
+  companyId String
+  storeId   String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([storeId])
+  @@index([expiresAt])
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  companyId  String
+  employeeId String
+  type       LeaveType
+  startAt    DateTime
+  endAt      DateTime
+  hours      Decimal     @db.Decimal(18, 4)
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  approvedBy String?
+  approvedAt DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+// ============================================================
+// 基礎資料：分類 / 單位 / 商品
+// ============================================================
+
+model Category {
+  id        String    @id @default(cuid())
+  companyId String
+  parentId  String?
+  code      String
+  name      String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  items    Item[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Unit {
+  id        String    @id @default(cuid())
+  companyId String
+  code      String
+  name      String // 個 / 公克 / 公斤 / 杯 / 包
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  conversionsFrom UnitConversion[] @relation("FromUnit")
+  conversionsTo   UnitConversion[] @relation("ToUnit")
+  baseItems       Item[]           @relation("ItemBaseUnit")
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model UnitConversion {
+  id         String   @id @default(cuid())
+  companyId  String
+  fromUnitId String
+  toUnitId   String
+  // 1 fromUnit = factor toUnit
+  factor     Decimal  @db.Decimal(18, 6)
+  createdAt  DateTime @default(now())
+
+  fromUnit Unit @relation("FromUnit", fields: [fromUnitId], references: [id])
+  toUnit   Unit @relation("ToUnit", fields: [toUnitId], references: [id])
+
+  @@unique([companyId, fromUnitId, toUnitId])
+  @@index([companyId])
+}
+
+model Item {
+  id             String   @id @default(cuid())
+  companyId      String
+  sku            String
+  barcode        String?
+  name           String
+  categoryId     String?
+  type           ItemType
+  baseUnitId     String
+  purchaseUnitId String?
+  salesUnitId    String?
+  // 售價 / 標準成本
+  price          Decimal  @default(0) @db.Decimal(18, 4)
+  standardCost   Decimal  @default(0) @db.Decimal(18, 4)
+  taxType        TaxType  @default(TAXABLE)
+  // 庫存管理
+  trackStock     Boolean  @default(true)
+  safetyStock    Decimal  @default(0) @db.Decimal(18, 4)
+  reorderPoint   Decimal  @default(0) @db.Decimal(18, 4)
+  shelfLifeDays  Int?
+  isActive       Boolean  @default(true)
+  imageUrl       String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+
+  category     Category? @relation(fields: [categoryId], references: [id])
+  baseUnit     Unit      @relation("ItemBaseUnit", fields: [baseUnitId], references: [id])
+
+  variants       ItemVariant[]
+  modifierGroups ModifierGroup[]
+  recipes        Recipe[]        @relation("RecipeProduct")
+  recipeItems    RecipeItem[]
+  stockLots      StockLot[]
+  stockBalances  StockBalance[]
+  stockMovements StockMovement[]
+
+  @@unique([companyId, sku])
+  @@index([companyId])
+  @@index([type])
+  @@index([categoryId])
+  @@index([barcode])
+}
+
+// 為避免 Unit 背向關聯爆炸，僅 baseUnit 建立關聯；purchaseUnit/salesUnit 以純量 id 處理
+model ItemVariant {
+  id         String    @id @default(cuid())
+  companyId  String
+  itemId     String
+  sku        String
+  name       String // 規格名稱：大杯 / 小杯
+  priceDelta Decimal   @default(0) @db.Decimal(18, 4)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, sku])
+  @@index([itemId])
+}
+
+model ModifierGroup {
+  id          String    @id @default(cuid())
+  companyId   String
+  itemId      String?
+  name        String // 糖度 / 冰量 / 加料
+  minSelect   Int       @default(0)
+  maxSelect   Int       @default(1)
+  required    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  item    Item?           @relation(fields: [itemId], references: [id])
+  options ModifierOption[]
+
+  @@index([companyId])
+  @@index([itemId])
+}
+
+model ModifierOption {
+  id        String    @id @default(cuid())
+  companyId String
+  groupId   String
+  name      String // 正常糖 / 半糖 / 珍珠
+  priceDelta Decimal  @default(0) @db.Decimal(18, 4)
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  group ModifierGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+}
+
+model PaymentMethodConfig {
+  id        String    @id @default(cuid())
+  companyId String
+  method    PaymentMethod
+  label     String
+  isActive  Boolean   @default(true)
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([companyId, method])
+  @@index([companyId])
+}
+
+// ============================================================
+// 供應商 / 客戶 / 會員
+// ============================================================
+
+model Supplier {
+  id          String    @id @default(cuid())
+  companyId   String
+  code        String
+  name        String
+  contact     String?
+  phone       String?
+  email       String?
+  address     String?
+  taxId       String?
+  paymentTerm String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  companyId String
+  code      String?
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  note      String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  member      Member?
+  salesOrders SalesOrder[]
+
+  @@index([companyId])
+  @@index([phone])
+}
+
+model Member {
+  id              String    @id @default(cuid())
+  companyId       String
+  customerId      String    @unique
+  memberNo        String
+  tier            String    @default("NORMAL")
+  points          Int       @default(0) // 目前點數餘額（明細見 LoyaltyTransaction）
+  storedValue     Decimal   @default(0) @db.Decimal(18, 4) // 儲值金餘額（明細見 StoredValueTransaction）
+  birthday        DateTime? @db.Date
+  isBlacklisted   Boolean   @default(false)
+  note            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  customer              Customer                  @relation(fields: [customerId], references: [id])
+  loyaltyTransactions   LoyaltyTransaction[]
+  storedValueTransactions StoredValueTransaction[]
+
+  @@unique([companyId, memberNo])
+  @@index([companyId])
+}
+
+model LoyaltyTransaction {
+  id            String                 @id @default(cuid())
+  companyId     String
+  memberId      String
+  type          LoyaltyTransactionType
+  points        Int // 正負皆可
+  balanceAfter  Int
+  sourceType    String? // SALES_ORDER 等
+  sourceId      String?
+  note          String?
+  createdAt     DateTime               @default(now())
+  createdBy     String?
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([companyId])
+  @@index([memberId])
+}
+
+model StoredValueTransaction {
+  id           String                     @id @default(cuid())
+  companyId    String
+  memberId     String
+  type         StoredValueTransactionType
+  amount       Decimal                    @db.Decimal(18, 4) // 正負皆可
+  balanceAfter Decimal                    @db.Decimal(18, 4)
+  sourceType   String?
+  sourceId     String?
+  note         String?
+  createdAt    DateTime                   @default(now())
+  createdBy    String?
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([companyId])
+  @@index([memberId])
+}
+
+// ============================================================
+// 配方 / BOM
+// ============================================================
+
+model Recipe {
+  id          String    @id @default(cuid())
+  companyId   String
+  productId   String // 產出品項（成品 / 半成品）
+  name        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  product  Item            @relation("RecipeProduct", fields: [productId], references: [id])
+  versions RecipeVersion[]
+
+  @@index([companyId])
+  @@index([productId])
+}
+
+model RecipeVersion {
+  id            String    @id @default(cuid())
+  companyId     String
+  recipeId      String
+  version       Int
+  // 標準產量（以產出品項基本單位計）
+  outputQty     Decimal   @db.Decimal(18, 4)
+  isActive      Boolean   @default(true)
+  note          String?
+  createdAt     DateTime  @default(now())
+  createdBy     String?
+
+  recipe Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  items  RecipeItem[]
+
+  @@unique([recipeId, version])
+  @@index([companyId])
+}
+
+model RecipeItem {
+  id          String   @id @default(cuid())
+  companyId   String
+  versionId   String
+  materialId  String // 原料 / 半成品
+  // 標準用量（以原料基本單位計）
+  quantity    Decimal  @db.Decimal(18, 4)
+  // 損耗率 0~1
+  wasteRate   Decimal  @default(0) @db.Decimal(18, 6)
+  createdAt   DateTime @default(now())
+
+  version  RecipeVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  material Item          @relation(fields: [materialId], references: [id])
+
+  @@index([companyId])
+  @@index([versionId])
+}
+
+// ============================================================
+// 庫存
+// ============================================================
+
+// 批號 / 效期
+model StockLot {
+  id            String    @id @default(cuid())
+  companyId     String
+  itemId        String
+  lotNo         String
+  manufacturedAt DateTime? @db.Date
+  expiresAt     DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+
+  item     Item            @relation(fields: [itemId], references: [id])
+  balances StockBalance[]
+  movements StockMovement[]
+
+  @@unique([companyId, itemId, lotNo])
+  @@index([companyId])
+  @@index([itemId])
+  @@index([expiresAt])
+}
+
+// 即時結餘（由 StockMovement 維護）
+model StockBalance {
+  id          String   @id @default(cuid())
+  companyId   String
+  itemId      String
+  warehouseId String
+  lotId       String?
+  quantity    Decimal  @default(0) @db.Decimal(18, 4)
+  reserved    Decimal  @default(0) @db.Decimal(18, 4)
+  // 移動平均成本
+  avgCost     Decimal  @default(0) @db.Decimal(18, 4)
+  updatedAt   DateTime @updatedAt
+
+  item Item      @relation(fields: [itemId], references: [id])
+  lot  StockLot? @relation(fields: [lotId], references: [id])
+
+  @@unique([itemId, warehouseId, lotId])
+  @@index([companyId])
+  @@index([warehouseId])
+}
+
+// 不可變的庫存異動帳
+model StockMovement {
+  id            String            @id @default(cuid())
+  companyId     String
+  storeId       String?
+  warehouseId   String
+  itemId        String
+  lotId         String?
+  type          StockMovementType
+  // 異動數量（一律以正數記錄，方向由 type 決定）
+  quantity      Decimal           @db.Decimal(18, 4)
+  // 異動方向：+1 入 / -1 出
+  direction     Int
+  unitCost      Decimal           @default(0) @db.Decimal(18, 4)
+  quantityBefore Decimal          @db.Decimal(18, 4)
+  quantityAfter  Decimal          @db.Decimal(18, 4)
+  // 來源單據
+  sourceType    String? // SALES_ORDER / PURCHASE / PRODUCTION / TRANSFER / COUNT / WASTE
+  sourceId      String?
+  sourceNo      String?
+  reason        String?
+  operatorId    String?
+  occurredAt    DateTime          @default(now())
+  createdAt     DateTime          @default(now())
+
+  item Item      @relation(fields: [itemId], references: [id])
+  lot  StockLot? @relation(fields: [lotId], references: [id])
+
+  @@index([companyId])
+  @@index([warehouseId])
+  @@index([itemId])
+  @@index([type])
+  @@index([sourceType, sourceId])
+  @@index([occurredAt])
+}
+
+// 庫存保留（POS 暫存 / 訂單未結）
+model StockReservation {
+  id          String   @id @default(cuid())
+  companyId   String
+  warehouseId String
+  itemId      String
+  lotId       String?
+  quantity    Decimal  @db.Decimal(18, 4)
+  sourceType  String?
+  sourceId    String?
+  releasedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([itemId])
+  @@index([warehouseId])
+}
+
+model StockTransfer {
+  id              String         @id @default(cuid())
+  companyId       String
+  transferNo      String
+  fromWarehouseId String
+  toWarehouseId   String
+  status          TransferStatus @default(DRAFT)
+  note            String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       String?
+  completedAt     DateTime?
+  deletedAt       DateTime?
+
+  items StockTransferItem[]
+
+  @@unique([companyId, transferNo])
+  @@index([companyId])
+}
+
+model StockTransferItem {
+  id         String   @id @default(cuid())
+  transferId String
+  itemId     String
+  lotId      String?
+  quantity   Decimal  @db.Decimal(18, 4)
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+}
+
+model StockCount {
+  id          String           @id @default(cuid())
+  companyId   String
+  countNo     String
+  warehouseId String
+  status      StockCountStatus @default(DRAFT)
+  note        String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?
+  completedAt DateTime?
+  deletedAt   DateTime?
+
+  items StockCountItem[]
+
+  @@unique([companyId, countNo])
+  @@index([companyId])
+}
+
+model StockCountItem {
+  id            String  @id @default(cuid())
+  countId       String
+  itemId        String
+  lotId         String?
+  systemQty     Decimal @db.Decimal(18, 4)
+  countedQty    Decimal @db.Decimal(18, 4)
+  differenceQty Decimal @db.Decimal(18, 4)
+
+  count StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+
+  @@index([countId])
+}
+
+model WasteRecord {
+  id          String   @id @default(cuid())
+  companyId   String
+  wasteNo     String
+  warehouseId String
+  itemId      String
+  lotId       String?
+  quantity    Decimal  @db.Decimal(18, 4)
+  reason      String?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  @@unique([companyId, wasteNo])
+  @@index([companyId])
+  @@index([itemId])
+}
+
+// ============================================================
+// 採購
+// ============================================================
+
+model PurchaseRequest {
+  id          String                @id @default(cuid())
+  companyId   String
+  storeId     String?
+  requestNo   String
+  status      PurchaseRequestStatus @default(DRAFT)
+  note        String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  createdBy   String?
+  approvedBy  String?
+  approvedAt  DateTime?
+  deletedAt   DateTime?
+
+  items PurchaseRequestItem[]
+
+  @@unique([companyId, requestNo])
+  @@index([companyId])
+}
+
+model PurchaseRequestItem {
+  id        String  @id @default(cuid())
+  requestId String
+  itemId    String
+  quantity  Decimal @db.Decimal(18, 4)
+  note      String?
+
+  request PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model PurchaseOrder {
+  id           String              @id @default(cuid())
+  companyId    String
+  storeId      String?
+  warehouseId  String
+  orderNo      String
+  supplierId   String
+  status       PurchaseOrderStatus @default(DRAFT)
+  orderDate    DateTime            @default(now())
+  expectedDate DateTime?
+  subtotal     Decimal             @default(0) @db.Decimal(18, 4)
+  taxAmount    Decimal             @default(0) @db.Decimal(18, 4)
+  total        Decimal             @default(0) @db.Decimal(18, 4)
+  note         String?
+  isPaid       Boolean             @default(false)
+  paidAt       DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    String?
+  approvedBy   String?
+  approvedAt   DateTime?
+  deletedAt    DateTime?
+
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+  receipts GoodsReceipt[]
+
+  @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  itemId       String
+  quantity     Decimal @db.Decimal(18, 4)
+  receivedQty  Decimal @default(0) @db.Decimal(18, 4)
+  unitPrice    Decimal @db.Decimal(18, 4)
+  lineTotal    Decimal @db.Decimal(18, 4)
+
+  order PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([itemId])
+}
+
+model GoodsReceipt {
+  id          String   @id @default(cuid())
+  companyId   String
+  warehouseId String
+  receiptNo   String
+  orderId     String
+  receivedAt  DateTime @default(now())
+  note        String?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  order PurchaseOrder      @relation(fields: [orderId], references: [id])
+  items GoodsReceiptItem[]
+
+  @@unique([companyId, receiptNo])
+  @@index([companyId])
+  @@index([orderId])
+}
+
+model GoodsReceiptItem {
+  id            String    @id @default(cuid())
+  receiptId     String
+  orderItemId   String
+  itemId        String
+  quantity      Decimal   @db.Decimal(18, 4)
+  unitCost      Decimal   @db.Decimal(18, 4)
+  lotNo         String?
+  manufacturedAt DateTime? @db.Date
+  expiresAt     DateTime? @db.Date
+
+  receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  @@index([receiptId])
+}
+
+// ============================================================
+// 生產
+// ============================================================
+
+model ProductionOrder {
+  id              String                @id @default(cuid())
+  companyId       String
+  storeId         String?
+  warehouseId     String
+  orderNo         String
+  productId       String
+  recipeVersionId String?
+  status          ProductionOrderStatus @default(DRAFT)
+  plannedQty      Decimal               @db.Decimal(18, 4)
+  producedQty     Decimal               @default(0) @db.Decimal(18, 4)
+  totalCost       Decimal               @default(0) @db.Decimal(18, 4)
+  note            String?
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  createdBy       String?
+  deletedAt       DateTime?
+
+  materials ProductionMaterial[]
+  outputs   ProductionOutput[]
+
+  @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([productId])
+  @@index([status])
+}
+
+model ProductionMaterial {
+  id          String   @id @default(cuid())
+  productionId String
+  itemId      String
+  lotId       String?
+  plannedQty  Decimal  @db.Decimal(18, 4)
+  issuedQty   Decimal  @default(0) @db.Decimal(18, 4)
+  returnedQty Decimal  @default(0) @db.Decimal(18, 4)
+  unitCost    Decimal  @default(0) @db.Decimal(18, 4)
+
+  production ProductionOrder @relation(fields: [productionId], references: [id], onDelete: Cascade)
+
+  @@index([productionId])
+  @@index([itemId])
+}
+
+model ProductionOutput {
+  id          String    @id @default(cuid())
+  productionId String
+  itemId      String
+  quantity    Decimal   @db.Decimal(18, 4)
+  lotNo       String?
+  manufacturedAt DateTime? @db.Date
+  expiresAt   DateTime? @db.Date
+  unitCost    Decimal   @default(0) @db.Decimal(18, 4)
+  isWaste     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  production ProductionOrder @relation(fields: [productionId], references: [id], onDelete: Cascade)
+
+  @@index([productionId])
+  @@index([itemId])
+}
+
+// ============================================================
+// POS / 銷售
+// ============================================================
+
+model CashRegister {
+  id        String    @id @default(cuid())
+  companyId String
+  storeId   String
+  code      String
+  name      String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  shifts CashShift[]
+
+  @@unique([companyId, code])
+  @@index([storeId])
+}
+
+model CashShift {
+  id            String          @id @default(cuid())
+  companyId     String
+  storeId       String
+  registerId    String
+  status        CashShiftStatus @default(OPEN)
+  openingFloat  Decimal         @default(0) @db.Decimal(18, 4)
+  closingAmount Decimal?        @db.Decimal(18, 4)
+  expectedCash  Decimal?        @db.Decimal(18, 4)
+  difference    Decimal?        @db.Decimal(18, 4)
+  openedBy      String?
+  openedAt      DateTime        @default(now())
+  closedBy      String?
+  closedAt      DateTime?
+
+  register    CashRegister @relation(fields: [registerId], references: [id])
+  salesOrders SalesOrder[]
+
+  @@index([companyId])
+  @@index([storeId])
+  @@index([status])
+}
+
+model SalesOrder {
+  id             String           @id @default(cuid())
+  companyId      String
+  storeId        String
+  warehouseId    String
+  cashShiftId    String?
+  customerId     String?
+  orderNo        String
+  channel        OrderChannel     @default(TAKEOUT)
+  status         SalesOrderStatus @default(DRAFT)
+  // 金額快照
+  subtotal       Decimal          @default(0) @db.Decimal(18, 4)
+  discountAmount Decimal          @default(0) @db.Decimal(18, 4)
+  taxAmount      Decimal          @default(0) @db.Decimal(18, 4)
+  total          Decimal          @default(0) @db.Decimal(18, 4)
+  // 成本與毛利快照
+  costTotal      Decimal          @default(0) @db.Decimal(18, 4)
+  grossProfit    Decimal          @default(0) @db.Decimal(18, 4)
+  paidTotal      Decimal          @default(0) @db.Decimal(18, 4)
+  changeAmount   Decimal          @default(0) @db.Decimal(18, 4)
+  pickupNo       String?
+  note           String?
+  // 防重複結帳
+  idempotencyKey String?          @unique
+  placedAt       DateTime?
+  paidAt         DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  createdBy      String?
+  cashierId      String?
+  deletedAt      DateTime?
+
+  customer  Customer?        @relation(fields: [customerId], references: [id])
+  cashShift CashShift?       @relation(fields: [cashShiftId], references: [id])
+  items     SalesOrderItem[]
+  payments  Payment[]
+  refunds   Refund[]
+  printJobs PrintJob[]
+
+  @@unique([companyId, orderNo])
+  @@index([companyId])
+  @@index([storeId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SalesOrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  itemId       String
+  variantId    String?
+  name         String // 商品名稱快照
+  quantity     Decimal @db.Decimal(18, 4)
+  unitPrice    Decimal @db.Decimal(18, 4) // 售價快照
+  discount     Decimal @default(0) @db.Decimal(18, 4)
+  unitCost     Decimal @default(0) @db.Decimal(18, 4) // 成本快照
+  lineTotal    Decimal @db.Decimal(18, 4)
+  note         String?
+
+  order     SalesOrder            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  modifiers SalesOrderModifier[]
+
+  @@index([orderId])
+  @@index([itemId])
+}
+
+model SalesOrderModifier {
+  id          String  @id @default(cuid())
+  orderItemId String
+  groupName   String // 快照
+  optionName  String // 快照
+  priceDelta  Decimal @default(0) @db.Decimal(18, 4)
+
+  orderItem SalesOrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderItemId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  companyId String
+  orderId   String
+  method    PaymentMethod
+  amount    Decimal       @db.Decimal(18, 4)
+  status    PaymentStatus @default(PAID)
+  reference String?
+  paidAt    DateTime      @default(now())
+  createdBy String?
+
+  order SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([orderId])
+}
+
+model Refund {
+  id        String       @id @default(cuid())
+  companyId String
+  orderId   String
+  refundNo  String
+  amount    Decimal      @db.Decimal(18, 4)
+  reason    String?
+  status    RefundStatus @default(COMPLETED)
+  createdAt DateTime     @default(now())
+  createdBy String?
+
+  order SalesOrder @relation(fields: [orderId], references: [id])
+
+  @@unique([companyId, refundNo])
+  @@index([companyId])
+  @@index([orderId])
+}
+
+// ============================================================
+// 列印
+// ============================================================
+
+model PrintJob {
+  id          String         @id @default(cuid())
+  companyId   String
+  storeId     String
+  orderId     String?
+  printerName String?
+  status      PrintJobStatus @default(PENDING)
+  // TSPL 指令內容或標籤資料 JSON
+  payload     String
+  copies      Int            @default(1)
+  attempts    Int            @default(0)
+  errorMessage String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  printedAt   DateTime?
+
+  order SalesOrder? @relation(fields: [orderId], references: [id])
+
+  @@index([companyId])
+  @@index([storeId])
+  @@index([status])
+}
+
+// ============================================================
+// 系統：通知 / 稽核 / 單號序列
+// ============================================================
+
+model Notification {
+  id        String            @id @default(cuid())
+  companyId String
+  storeId   String?
+  userId    String?
+  level     NotificationLevel @default(INFO)
+  title     String
+  body      String?
+  link      String?
+  isRead    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String?
+  userId     String?
+  action     String // CREATE / UPDATE / DELETE / APPROVE / LOGIN ...
+  entityType String
+  entityId   String?
+  // 變更前後快照
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// 可讀單據編號序列：SO-20260629-0001 等
+model Sequence {
+  id        String   @id @default(cuid())
+  companyId String
+  type      String // SO / PO / GR / MO / TR / SC / WS / RF / PR
+  period    String // yyyymmdd 或 yyyymm（依規則）
+  lastValue Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, type, period])
+  @@index([companyId])
+}
