@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getProductionOrder } from "@/modules/production/service";
 import { completeProductionAction } from "@/modules/production/actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
@@ -27,6 +28,8 @@ export default async function ProductionDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/dashboard/production" />
+
       <PageHeader
         title={`生產單 ${mo.orderNo}`}
         description={`產出：${productName}（計畫 ${mo.plannedQty.toString()}）`}

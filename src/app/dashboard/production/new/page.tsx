@@ -1,6 +1,7 @@
 import { requirePermission } from "@/lib/permissions";
 import { getProducibleProducts } from "@/modules/production/service";
 import { listWarehouses } from "@/modules/inventory/service";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { ProductionForm } from "./production-form";
 
@@ -14,7 +15,8 @@ export default async function NewProductionPage() {
   ]);
 
   return (
-    <div>
+    <div className="space-y-4">
+      <BackButton fallbackHref="/dashboard/production" />
       <PageHeader title="新增生產單" description="依配方計畫生產，系統自動展開所需原料" />
       <ProductionForm
         recipes={recipes.map((r) => ({

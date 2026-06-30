@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getItem, getCatalogFormData } from "@/modules/catalog/service";
 import { updateItemAction } from "@/modules/catalog/actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { ItemForm } from "../../new/item-form";
 
@@ -21,7 +22,8 @@ export default async function EditItemPage({
   if (!item) notFound();
 
   return (
-    <div>
+    <div className="space-y-4">
+      <BackButton fallbackHref="/dashboard/items" />
       <PageHeader title={`編輯商品 - ${item.name}`} description={`SKU：${item.sku}`} />
       <ItemForm
         action={updateItemAction}

@@ -1,5 +1,6 @@
 import { requirePermission, companyScope } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { RecipeForm } from "./recipe-form";
 
@@ -22,7 +23,8 @@ export default async function NewRecipePage() {
   ]);
 
   return (
-    <div>
+    <div className="space-y-4">
+      <BackButton fallbackHref="/dashboard/recipes" />
       <PageHeader title="新增配方" description="定義產出品項與所需原料（BOM）" />
       <RecipeForm
         products={products.map((p) => ({ id: p.id, name: `${p.name}（${p.sku}）` }))}

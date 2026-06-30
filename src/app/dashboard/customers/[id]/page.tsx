@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getCustomer } from "@/modules/crm/service";
 import { adjustPointsAction, topUpStoredValueAction } from "@/modules/crm/actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState } from "@/components/ui/table";
@@ -27,6 +28,8 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/dashboard/customers" />
+
       <PageHeader
         title={customer.name}
         description={customer.phone ?? "—"}

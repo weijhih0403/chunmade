@@ -7,6 +7,7 @@ import {
   cancelPurchaseOrderAction,
   receiveGoodsAction,
 } from "@/modules/purchasing/actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
@@ -34,6 +35,8 @@ export default async function PurchaseDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/dashboard/purchases" />
+
       <PageHeader
         title={`採購單 ${po.orderNo}`}
         description={`供應商：${po.supplier.name}`}

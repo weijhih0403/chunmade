@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { listWarehouseStock } from "@/modules/inventory/service";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
 import { formatTWD } from "@/lib/money";
@@ -26,12 +26,7 @@ export default async function WarehouseStockPage({
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/dashboard/org"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700"
-      >
-        <span aria-hidden>←</span> 回門市 / 倉庫
-      </Link>
+      <BackButton fallbackHref="/dashboard/org" />
 
       <PageHeader
         title={`原物料庫存 — ${warehouse.name}`}

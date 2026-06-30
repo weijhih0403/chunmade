@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getCount } from "@/modules/inventory/service";
 import { completeCountAction } from "@/modules/inventory/count-actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -24,12 +24,7 @@ export default async function CountDetailPage({
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/dashboard/counts"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700"
-      >
-        <span aria-hidden>←</span> 回上一頁
-      </Link>
+      <BackButton fallbackHref="/dashboard/counts" />
 
       <PageHeader
         title={`盤點單 ${count.countNo}`}

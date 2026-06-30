@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/permissions";
 import { getSalesOrder } from "@/modules/pos/service";
 import { refundOrderAction } from "@/modules/pos/checkout";
 import { reprintOrderLabelAction } from "@/modules/print/actions";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
@@ -30,6 +31,8 @@ export default async function SalesDetailPage({
 
   return (
     <div className="space-y-6">
+      <BackButton fallbackHref="/dashboard/sales" />
+
       <PageHeader
         title={`訂單 ${order.orderNo}`}
         description={formatDateTime(order.createdAt)}

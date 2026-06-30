@@ -2,6 +2,7 @@ import { requirePermission, companyScope } from "@/lib/permissions";
 import { listSuppliers } from "@/modules/purchasing/service";
 import { listWarehouses } from "@/modules/inventory/service";
 import { prisma } from "@/lib/db";
+import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { PurchaseOrderForm } from "./po-form";
 
@@ -21,7 +22,8 @@ export default async function NewPurchaseOrderPage() {
   ]);
 
   return (
-    <div>
+    <div className="space-y-4">
+      <BackButton fallbackHref="/dashboard/purchases" />
       <PageHeader title="新增採購單" description="向供應商採購原料 / 半成品" />
       <PurchaseOrderForm
         suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
