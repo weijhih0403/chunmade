@@ -1,8 +1,10 @@
 import { requirePermission } from "@/lib/permissions";
 import { listSuppliers } from "@/modules/purchasing/service";
+import { deleteSupplierAction } from "@/modules/purchasing/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState } from "@/components/ui/table";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { SupplierForm } from "./supplier-form";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +36,7 @@ export default async function SuppliersPage() {
               <TH>名稱</TH>
               <TH>聯絡人</TH>
               <TH>電話</TH>
+              {canManage && <TH></TH>}
             </tr>
           </THead>
           <tbody>
@@ -43,6 +46,16 @@ export default async function SuppliersPage() {
                 <TD className="font-medium text-gray-900">{s.name}</TD>
                 <TD>{s.contact ?? "—"}</TD>
                 <TD>{s.phone ?? "—"}</TD>
+                {canManage && (
+                  <TD>
+                    <form action={deleteSupplierAction}>
+                      <input type="hidden" name="supplierId" value={s.id} />
+                      <SubmitButton variant="ghost" size="sm" pendingText="刪除中…">
+                        <span className="text-red-600">刪除</span>
+                      </SubmitButton>
+                    </form>
+                  </TD>
+                )}
               </TR>
             ))}
           </tbody>

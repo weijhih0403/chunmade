@@ -47,6 +47,35 @@ export async function createSupplierAction(
   }
 }
 
+/** 刪除供應商：軟刪除（既有採購單仍保留參照） */
+export async function deleteSupplierAction(formData: FormData) {
+  const actor = await requirePermission("purchase.manage");
+  const scope = companyScope(actor);
+  const id = String(formData.get("supplierId") ?? "");
+
+  const supplier = await prisma.supplier.findFirst({
+    where: { ...scope, id, deletedAt: null },
+  });
+  if (!supplier) throw new NotFoundError("找不到供應商");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.supplier.update({
+      where: { id: supplier.id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    await writeAudit(tx, {
+      companyId: scope.companyId,
+      userId: actor.id,
+      action: "DELETE",
+      entityType: "Supplier",
+      entityId: supplier.id,
+      before: { code: supplier.code, name: supplier.name },
+    });
+  });
+
+  revalidatePath("/dashboard/suppliers");
+}
+
 export async function createPurchaseOrderAction(
   _prev: FormState,
   formData: FormData,
