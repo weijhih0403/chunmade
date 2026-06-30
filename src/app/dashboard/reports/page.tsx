@@ -47,7 +47,7 @@ export default async function ReportsPage({
         }
       />
 
-      <form className="flex items-end gap-2" method="get">
+      <form className="flex flex-wrap items-end gap-2" method="get">
         <div>
           <label className="mb-1 block text-xs text-gray-500">起</label>
           <input

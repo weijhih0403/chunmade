@@ -32,10 +32,13 @@ export default async function CountsPage() {
           <CardTitle>新增盤點單</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={createCountAction} className="flex items-end gap-2">
-            <div>
+          <form
+            action={createCountAction}
+            className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2"
+          >
+            <div className="w-full sm:w-auto">
               <label className="mb-1 block text-xs text-gray-500">倉庫</label>
-              <Select name="warehouseId" required defaultValue="" className="w-48">
+              <Select name="warehouseId" required defaultValue="" className="w-full sm:w-48">
                 <option value="" disabled>
                   請選擇
                 </option>
@@ -46,7 +49,9 @@ export default async function CountsPage() {
                 ))}
               </Select>
             </div>
-            <SubmitButton pendingText="建立中…">建立並開始盤點</SubmitButton>
+            <SubmitButton pendingText="建立中…" className="w-full sm:w-auto">
+              建立並開始盤點
+            </SubmitButton>
           </form>
         </CardContent>
       </Card>

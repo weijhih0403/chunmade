@@ -48,7 +48,7 @@ export default async function ReviewUsersPage() {
                   申請時間：{formatDateTime(u.appliedAt)}
                 </p>
                 <div className="flex flex-wrap items-end gap-3">
-                  <form action={approveUserAction} className="flex items-end gap-2">
+                  <form action={approveUserAction} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="userId" value={u.id} />
                     <div>
                       <label className="mb-1 block text-xs text-gray-500">指派角色</label>

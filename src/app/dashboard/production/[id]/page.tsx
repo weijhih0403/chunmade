@@ -84,7 +84,7 @@ export default async function ProductionDetailPage({
               <CardTitle>完工入庫</CardTitle>
             </CardHeader>
             <CardContent>
-              <form action={completeProductionAction} className="flex items-end gap-3">
+              <form action={completeProductionAction} className="flex flex-wrap items-end gap-3">
                 <input type="hidden" name="productionId" value={mo.id} />
                 <div>
                   <label className="mb-1 block text-xs text-gray-500">實際產量</label>

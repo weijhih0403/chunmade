@@ -11,24 +11,24 @@ type Opt = { id: string; name: string };
 export function ShiftForm() {
   const [state, action, pending] = useActionState(createShiftAction, initialFormState);
   return (
-    <form action={action} className="flex flex-wrap items-end gap-2">
-      <div>
+    <form action={action} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">代碼</label>
-        <Input name="code" required className="w-20" />
+        <Input name="code" required className="w-full sm:w-20" />
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">名稱</label>
-        <Input name="name" required className="w-28" />
+        <Input name="name" required className="w-full sm:w-28" />
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">開始</label>
-        <Input name="startTime" type="time" required className="w-28" />
+        <Input name="startTime" type="time" required className="w-full sm:w-28" />
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">結束</label>
-        <Input name="endTime" type="time" required className="w-28" />
+        <Input name="endTime" type="time" required className="w-full sm:w-28" />
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "新增中…" : "新增班別"}
       </Button>
       {state.message && (
@@ -51,10 +51,10 @@ export function ScheduleForm({
 }) {
   const [state, action, pending] = useActionState(createScheduleAction, initialFormState);
   return (
-    <form action={action} className="flex flex-wrap items-end gap-2">
-      <div>
+    <form action={action} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">員工</label>
-        <Select name="employeeId" required defaultValue="" className="w-32">
+        <Select name="employeeId" required defaultValue="" className="w-full sm:w-32">
           <option value="" disabled>
             請選擇
           </option>
@@ -65,9 +65,9 @@ export function ScheduleForm({
           ))}
         </Select>
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">班別</label>
-        <Select name="shiftId" required defaultValue="" className="w-28">
+        <Select name="shiftId" required defaultValue="" className="w-full sm:w-28">
           <option value="" disabled>
             請選擇
           </option>
@@ -78,9 +78,9 @@ export function ScheduleForm({
           ))}
         </Select>
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">門市</label>
-        <Select name="storeId" required defaultValue="" className="w-28">
+        <Select name="storeId" required defaultValue="" className="w-full sm:w-28">
           <option value="" disabled>
             請選擇
           </option>
@@ -91,11 +91,11 @@ export function ScheduleForm({
           ))}
         </Select>
       </div>
-      <div>
+      <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">日期</label>
-        <Input name="workDate" type="date" required className="w-40" />
+        <Input name="workDate" type="date" required className="w-full sm:w-40" />
       </div>
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "排班中…" : "排班"}
       </Button>
       {state.message && (

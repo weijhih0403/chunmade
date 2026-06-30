@@ -56,14 +56,19 @@ export default async function CustomerDetailPage({
                   <CardTitle>調整點數</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form action={adjustPointsAction} className="flex items-end gap-2">
+                  <form
+                    action={adjustPointsAction}
+                    className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2"
+                  >
                     <input type="hidden" name="customerId" value={customer.id} />
-                    <div>
+                    <div className="w-full sm:w-auto">
                       <label className="mb-1 block text-xs text-gray-500">點數（可負）</label>
-                      <Input name="points" type="number" className="w-28" required />
+                      <Input name="points" type="number" className="w-full sm:w-28" required />
                     </div>
-                    <Input name="note" placeholder="備註" className="w-36" />
-                    <SubmitButton pendingText="送出中…">送出</SubmitButton>
+                    <Input name="note" placeholder="備註" className="w-full sm:w-36" />
+                    <SubmitButton pendingText="送出中…" className="w-full sm:w-auto">
+                      送出
+                    </SubmitButton>
                   </form>
                 </CardContent>
               </Card>
@@ -72,13 +77,18 @@ export default async function CustomerDetailPage({
                   <CardTitle>儲值</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form action={topUpStoredValueAction} className="flex items-end gap-2">
+                  <form
+                    action={topUpStoredValueAction}
+                    className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2"
+                  >
                     <input type="hidden" name="customerId" value={customer.id} />
-                    <div>
+                    <div className="w-full sm:w-auto">
                       <label className="mb-1 block text-xs text-gray-500">金額</label>
-                      <Input name="amount" type="number" step="0.01" className="w-32" required />
+                      <Input name="amount" type="number" step="0.01" className="w-full sm:w-32" required />
                     </div>
-                    <SubmitButton pendingText="處理中…">儲值</SubmitButton>
+                    <SubmitButton pendingText="處理中…" className="w-full sm:w-auto">
+                      儲值
+                    </SubmitButton>
                   </form>
                 </CardContent>
               </Card>
