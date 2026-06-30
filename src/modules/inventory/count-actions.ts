@@ -66,6 +66,36 @@ export async function createCountAction(formData: FormData) {
   redirect(`/dashboard/counts/${countId}`);
 }
 
+/** 刪除盤點單：軟刪除（限非已完成狀態，已完成會牽動庫存異動故保留） */
+export async function deleteCountAction(formData: FormData) {
+  const actor = await requirePermission("inventory.count");
+  const scope = companyScope(actor);
+  const countId = String(formData.get("countId") ?? "");
+
+  const count = await prisma.stockCount.findFirst({
+    where: { ...scope, id: countId, deletedAt: null },
+  });
+  if (!count) throw new BusinessRuleError("找不到盤點單");
+  if (count.status === "COMPLETED") throw new BusinessRuleError("已完成的盤點單無法刪除");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.stockCount.update({
+      where: { id: count.id },
+      data: { deletedAt: new Date(), status: "CANCELLED" },
+    });
+    await writeAudit(tx, {
+      companyId: scope.companyId,
+      userId: actor.id,
+      action: "DELETE",
+      entityType: "StockCount",
+      entityId: count.id,
+      before: { countNo: count.countNo, status: count.status },
+    });
+  });
+
+  revalidatePath("/dashboard/counts");
+}
+
 /** 完成盤點：依差異產生盤盈 / 盤虧異動 */
 export async function completeCountAction(formData: FormData) {
   const actor = await requirePermission("inventory.count");

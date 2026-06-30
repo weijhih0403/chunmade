@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listCounts, listWarehouses } from "@/modules/inventory/service";
-import { createCountAction } from "@/modules/inventory/count-actions";
+import { createCountAction, deleteCountAction } from "@/modules/inventory/count-actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
@@ -85,9 +85,22 @@ export default async function CountsPage() {
                 </TD>
                 <TD className="text-xs text-gray-500">{formatDateTime(c.createdAt)}</TD>
                 <TD>
-                  <Link href={`/dashboard/counts/${c.id}`} className="text-amber-700 hover:underline">
-                    開啟
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/dashboard/counts/${c.id}`}
+                      className="text-amber-700 hover:underline"
+                    >
+                      開啟
+                    </Link>
+                    {c.status !== "COMPLETED" && (
+                      <form action={deleteCountAction}>
+                        <input type="hidden" name="countId" value={c.id} />
+                        <SubmitButton variant="ghost" size="sm" pendingText="刪除中…">
+                          <span className="text-red-600">刪除</span>
+                        </SubmitButton>
+                      </form>
+                    )}
+                  </div>
                 </TD>
               </TR>
             ))
