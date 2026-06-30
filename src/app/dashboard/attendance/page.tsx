@@ -9,7 +9,7 @@ import { generateQrTokenAction, approveLeaveAction } from "@/modules/hr/actions"
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatDateTime } from "@/lib/dates";
 import { ClockForm, LeaveForm } from "./attendance-forms";
 
@@ -49,7 +49,7 @@ export default async function AttendancePage() {
             <CardContent className="space-y-3">
               <form action={generateQrTokenAction}>
                 <input type="hidden" name="storeId" value={storeId} />
-                <Button type="submit">產生新打卡碼（90 秒）</Button>
+                <SubmitButton pendingText="產生中…">產生新打卡碼（90 秒）</SubmitButton>
               </form>
               {token ? (
                 <div className="rounded-lg bg-gray-900 p-4 text-center">

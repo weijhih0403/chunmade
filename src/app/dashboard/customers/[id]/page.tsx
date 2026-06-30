@@ -5,7 +5,7 @@ import { adjustPointsAction, topUpStoredValueAction } from "@/modules/crm/action
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { formatTWD } from "@/lib/money";
 import { formatDateTime } from "@/lib/dates";
@@ -63,7 +63,7 @@ export default async function CustomerDetailPage({
                       <Input name="points" type="number" className="w-28" required />
                     </div>
                     <Input name="note" placeholder="備註" className="w-36" />
-                    <Button type="submit">送出</Button>
+                    <SubmitButton pendingText="送出中…">送出</SubmitButton>
                   </form>
                 </CardContent>
               </Card>
@@ -78,7 +78,7 @@ export default async function CustomerDetailPage({
                       <label className="mb-1 block text-xs text-gray-500">金額</label>
                       <Input name="amount" type="number" step="0.01" className="w-32" required />
                     </div>
-                    <Button type="submit">儲值</Button>
+                    <SubmitButton pendingText="處理中…">儲值</SubmitButton>
                   </form>
                 </CardContent>
               </Card>

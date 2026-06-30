@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { ROLE_LABELS } from "@/lib/constants";
 import { formatDateTime } from "@/lib/dates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Select } from "@/components/ui/input";
 import { approveUserAction, rejectUserAction } from "@/modules/users/actions";
 
@@ -60,16 +60,16 @@ export default async function ReviewUsersPage() {
                         ))}
                       </Select>
                     </div>
-                    <Button type="submit" variant="primary">
+                    <SubmitButton variant="primary" pendingText="處理中…">
                       核准
-                    </Button>
+                    </SubmitButton>
                   </form>
 
                   <form action={rejectUserAction} className="flex items-end gap-2">
                     <input type="hidden" name="userId" value={u.id} />
-                    <Button type="submit" variant="danger">
+                    <SubmitButton variant="danger" pendingText="處理中…">
                       拒絕
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               </CardContent>

@@ -6,7 +6,7 @@ import { reprintOrderLabelAction } from "@/modules/print/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { formatTWD } from "@/lib/money";
 import { formatDateTime } from "@/lib/dates";
@@ -98,18 +98,18 @@ export default async function SalesDetailPage({
             {canPrint && (
               <form action={reprintOrderLabelAction}>
                 <input type="hidden" name="orderId" value={order.id} />
-                <Button type="submit" variant="outline">
+                <SubmitButton variant="outline" pendingText="列印中…">
                   補印出單標籤
-                </Button>
+                </SubmitButton>
               </form>
             )}
             {canRefund && refundable && (
               <form action={refundOrderAction} className="space-y-2">
                 <input type="hidden" name="orderId" value={order.id} />
                 <Input name="reason" placeholder="退款原因（選填）" />
-                <Button type="submit" variant="danger">
+                <SubmitButton variant="danger" pendingText="處理中…">
                   全額退款（回補庫存）
-                </Button>
+                </SubmitButton>
               </form>
             )}
             {order.refunds.length > 0 && (

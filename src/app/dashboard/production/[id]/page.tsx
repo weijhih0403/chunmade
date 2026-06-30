@@ -5,7 +5,7 @@ import { completeProductionAction } from "@/modules/production/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { formatTWD } from "@/lib/money";
 
@@ -97,7 +97,7 @@ export default async function ProductionDetailPage({
                     required
                   />
                 </div>
-                <Button type="submit">完工並入庫成品</Button>
+                <SubmitButton pendingText="處理中…">完工並入庫成品</SubmitButton>
               </form>
               <p className="mt-2 text-xs text-gray-400">
                 系統將依比例扣除原料、計算成本、建立成品批號與效期。

@@ -10,7 +10,7 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatTWD } from "@/lib/money";
 import { PO_STATUS } from "@/modules/purchasing/labels";
 
@@ -44,21 +44,19 @@ export default async function PurchaseDetailPage({
         {canManage && po.status === "DRAFT" && (
           <form action={submitPurchaseOrderAction}>
             <input type="hidden" name="id" value={po.id} />
-            <Button type="submit">送審</Button>
+            <SubmitButton>送審</SubmitButton>
           </form>
         )}
         {canApprove && po.status === "PENDING_APPROVAL" && (
           <form action={approvePurchaseOrderAction}>
             <input type="hidden" name="id" value={po.id} />
-            <Button type="submit">核准</Button>
+            <SubmitButton>核准</SubmitButton>
           </form>
         )}
         {canManage && (po.status === "DRAFT" || po.status === "PENDING_APPROVAL") && (
           <form action={cancelPurchaseOrderAction}>
             <input type="hidden" name="id" value={po.id} />
-            <Button type="submit" variant="outline">
-              取消採購單
-            </Button>
+            <SubmitButton variant="outline">取消採購單</SubmitButton>
           </form>
         )}
       </div>
@@ -112,7 +110,7 @@ export default async function PurchaseDetailPage({
                 </tbody>
               </Table>
               <div className="p-4">
-                <Button type="submit">確認收貨入庫</Button>
+                <SubmitButton pendingText="處理中…">確認收貨入庫</SubmitButton>
               </div>
             </form>
           ) : (

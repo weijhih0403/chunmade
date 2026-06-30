@@ -4,7 +4,7 @@ import { getCount } from "@/modules/inventory/service";
 import { completeCountAction } from "@/modules/inventory/count-actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +79,7 @@ export default async function CountDetailPage({
 
         {editable && (
           <div className="mt-4">
-            <Button type="submit">完成盤點並產生差異調整</Button>
+            <SubmitButton pendingText="處理中…">完成盤點並產生差異調整</SubmitButton>
           </div>
         )}
       </form>
