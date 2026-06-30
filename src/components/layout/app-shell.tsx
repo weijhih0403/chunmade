@@ -84,7 +84,7 @@ export function AppShell({
           {!collapsed && <span className="font-bold text-amber-800">淳手作 ERP</span>}
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className="rounded p-1 text-gray-500 hover:bg-gray-100"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl leading-none text-gray-600 hover:bg-gray-100"
             aria-label="收合選單"
           >
             {collapsed ? "»" : "«"}
