@@ -246,6 +246,7 @@ async function main() {
   const uL = await unit("L", "公升");
   const uCup = await unit("cup", "杯");
   const uPcs = await unit("pcs", "個");
+  const uBag = await unit("bag", "包");
 
   await prisma.unitConversion.createMany({
     data: [
@@ -283,7 +284,7 @@ async function main() {
     shelfLife?: number;
   };
   const itemSeeds: ItemSeed[] = [
-    { sku: "RAW-SOYBEAN", name: "黃豆", type: "RAW_MATERIAL", unitId: uG.id, categoryId: catRaw.id, cost: 0.08, reorder: 5000, safety: 2000 },
+    { sku: "RAW-SOYBEAN", name: "黃豆", type: "RAW_MATERIAL", unitId: uBag.id, categoryId: catRaw.id, cost: 0.08 },
     { sku: "RAW-SUGAR", name: "砂糖", type: "RAW_MATERIAL", unitId: uG.id, categoryId: catRaw.id, cost: 0.03, reorder: 3000, safety: 1000 },
     { sku: "RAW-WATER", name: "水", type: "RAW_MATERIAL", unitId: uMl.id, categoryId: catRaw.id, cost: 0.001, track: false },
     { sku: "PACK-CUP", name: "外帶杯", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 1.5, reorder: 500, safety: 200 },
@@ -304,7 +305,8 @@ async function main() {
       sku: `ING-${String(idx + 1).padStart(3, "0")}`,
       name,
       type: "RAW_MATERIAL" as const,
-      unitId: uG.id,
+      // 豆類以「包」計數，其餘以公克
+      unitId: ["花豆", "綠豆"].includes(name) ? uBag.id : uG.id,
       categoryId: catRaw.id,
     })),
   ];
@@ -410,7 +412,7 @@ async function main() {
       },
     });
   }
-  await setInitialStock("RAW-SOYBEAN", wh1.id, 10000, 0.08);
+  await setInitialStock("RAW-SOYBEAN", wh1.id, 0, 0.08);
   await setInitialStock("RAW-SUGAR", wh1.id, 5000, 0.03);
   await setInitialStock("PACK-CUP", wh1.id, 1000, 1.5);
   await setInitialStock("PACK-LID", wh1.id, 1000, 0.8);
