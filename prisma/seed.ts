@@ -222,7 +222,7 @@ async function main() {
     });
   }
   const catDrink = await category("DRINK", "飲品");
-  const catDessert = await category("DESSERT", "豆花");
+  const catDessert = await category("DOUHUA", "豆花");
   const catRaw = await category("RAW", "原料");
   const catPack = await category("PACK", "包材");
 
