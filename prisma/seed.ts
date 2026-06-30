@@ -157,8 +157,8 @@ async function main() {
       storeId: store1.id,
       code: "MORNING",
       name: "早班",
-      startTime: "08:00",
-      endTime: "16:00",
+      startTime: "10:00",
+      endTime: "17:00",
     },
     update: {},
   });
@@ -169,8 +169,20 @@ async function main() {
       storeId: store1.id,
       code: "EVENING",
       name: "晚班",
-      startTime: "14:00",
-      endTime: "22:00",
+      startTime: "17:00",
+      endTime: "23:00",
+    },
+    update: {},
+  });
+  await prisma.shift.upsert({
+    where: { companyId_code: { companyId: company.id, code: "MIDDAY" } },
+    create: {
+      companyId: company.id,
+      storeId: store1.id,
+      code: "MIDDAY",
+      name: "插班",
+      startTime: "13:00",
+      endTime: "20:00",
     },
     update: {},
   });
