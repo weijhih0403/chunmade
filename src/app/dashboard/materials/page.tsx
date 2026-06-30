@@ -29,32 +29,35 @@ export default async function MaterialsPage({
         title="原物料"
         description="原料與半成品（成品/銷售商品請見「商品」）"
         action={
-          canManage ? (
-            <Link href="/dashboard/items/new">
-              <Button>新增原物料</Button>
-            </Link>
-          ) : null
+          <div className="flex flex-wrap items-center gap-2">
+            <form method="get" className="flex items-center gap-2">
+              <input
+                type="text"
+                name="q"
+                defaultValue={q ?? ""}
+                placeholder="搜尋名稱 / SKU…"
+                className="h-10 w-44 rounded-lg border border-gray-300 px-3 text-sm sm:w-56"
+              />
+              <Button type="submit" variant="outline">
+                搜尋
+              </Button>
+              {search && (
+                <Link
+                  href="/dashboard/materials"
+                  className="inline-flex h-10 items-center px-1 text-sm text-gray-500 hover:text-amber-700"
+                >
+                  清除
+                </Link>
+              )}
+            </form>
+            {canManage && (
+              <Link href="/dashboard/items/new">
+                <Button>新增原物料</Button>
+              </Link>
+            )}
+          </div>
         }
       />
-
-      <form method="get" className="mb-4 flex gap-2">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="搜尋原物料名稱 / SKU…"
-          className="h-10 w-full max-w-xs rounded-lg border border-gray-300 px-3 text-sm"
-        />
-        <Button type="submit">搜尋</Button>
-        {search && (
-          <Link
-            href="/dashboard/materials"
-            className="inline-flex h-10 items-center px-2 text-sm text-gray-500 hover:text-amber-700"
-          >
-            清除
-          </Link>
-        )}
-      </form>
 
       {items.length === 0 ? (
         <EmptyState message={search ? `找不到符合「${search}」的原物料。` : "尚無原物料，請先新增。"} />
