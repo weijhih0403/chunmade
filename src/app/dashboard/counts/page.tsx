@@ -5,7 +5,7 @@ import { createCountAction } from "@/modules/inventory/count-actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Select } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/dates";
 
@@ -46,7 +46,7 @@ export default async function CountsPage() {
                 ))}
               </Select>
             </div>
-            <Button type="submit">建立並開始盤點</Button>
+            <SubmitButton pendingText="建立中…">建立並開始盤點</SubmitButton>
           </form>
         </CardContent>
       </Card>
