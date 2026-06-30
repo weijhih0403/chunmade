@@ -9,10 +9,17 @@ import { ITEM_TYPE_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-export default async function MaterialsPage() {
+export default async function MaterialsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const search = q?.trim() || undefined;
   const actor = await requirePermission("catalog.read");
   const items = await listItems(actor, {
     types: ["RAW_MATERIAL", "SEMI_FINISHED"],
+    search,
   });
   const canManage = actor.permissions.has("catalog.manage");
 
@@ -30,8 +37,27 @@ export default async function MaterialsPage() {
         }
       />
 
+      <form method="get" className="mb-4 flex gap-2">
+        <input
+          type="text"
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder="搜尋原物料名稱 / SKU…"
+          className="h-10 w-full max-w-xs rounded-lg border border-gray-300 px-3 text-sm"
+        />
+        <Button type="submit">搜尋</Button>
+        {search && (
+          <Link
+            href="/dashboard/materials"
+            className="inline-flex h-10 items-center px-2 text-sm text-gray-500 hover:text-amber-700"
+          >
+            清除
+          </Link>
+        )}
+      </form>
+
       {items.length === 0 ? (
-        <EmptyState message="尚無原物料，請先新增。" />
+        <EmptyState message={search ? `找不到符合「${search}」的原物料。` : "尚無原物料，請先新增。"} />
       ) : (
         <Table>
           <THead>
