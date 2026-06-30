@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
 import { getCount } from "@/modules/inventory/service";
@@ -23,6 +24,13 @@ export default async function CountDetailPage({
 
   return (
     <div className="space-y-4">
+      <Link
+        href="/dashboard/counts"
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700"
+      >
+        <span aria-hidden>←</span> 回上一頁
+      </Link>
+
       <PageHeader
         title={`盤點單 ${count.countNo}`}
         description={editable ? "輸入實盤數量後送出，系統會自動產生差異調整" : "盤點已完成"}
