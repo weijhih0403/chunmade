@@ -1,4 +1,5 @@
 import "server-only";
+import { ItemType } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { type Actor, companyScope } from "@/lib/permissions";
 import { add, ZERO, type Decimal, gt, gte } from "@/lib/money";
@@ -57,6 +58,68 @@ export async function listStockOverview(actor: Actor): Promise<StockOverviewRow[
       isLow,
     };
   });
+}
+
+export type WarehouseStockRow = {
+  itemId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  type: ItemType;
+  qty: Decimal;
+  reorderPoint: Decimal;
+  avgValue: Decimal;
+  isLow: boolean;
+};
+
+/** 查詢單一倉庫的庫存（可依商品型別篩選，預設全部追蹤庫存品項） */
+export async function listWarehouseStock(
+  actor: Actor,
+  warehouseId: string,
+  opts?: { types?: ItemType[] },
+) {
+  const scope = companyScope(actor);
+  const warehouse = await prisma.warehouse.findFirst({
+    where: { ...scope, id: warehouseId, deletedAt: null },
+    include: { store: { select: { name: true } } },
+  });
+  if (!warehouse) return null;
+
+  const items = await prisma.item.findMany({
+    where: {
+      ...scope,
+      deletedAt: null,
+      trackStock: true,
+      ...(opts?.types ? { type: { in: opts.types } } : {}),
+    },
+    include: { baseUnit: true },
+    orderBy: { name: "asc" },
+  });
+
+  const balances = await prisma.stockBalance.findMany({
+    where: { ...scope, warehouseId },
+  });
+  const byItem = new Map(balances.map((b) => [b.itemId, b]));
+
+  const rows: WarehouseStockRow[] = items.map((it) => {
+    const b = byItem.get(it.id);
+    const qty = b?.quantity ?? ZERO;
+    const avgValue = b ? b.quantity.mul(b.avgCost) : ZERO;
+    const isLow = gt(it.reorderPoint, 0) && gte(it.reorderPoint, qty);
+    return {
+      itemId: it.id,
+      sku: it.sku,
+      name: it.name,
+      unit: it.baseUnit.name,
+      type: it.type,
+      qty,
+      reorderPoint: it.reorderPoint,
+      avgValue,
+      isLow,
+    };
+  });
+
+  return { warehouse, rows };
 }
 
 export async function listMovements(actor: Actor, itemId?: string) {

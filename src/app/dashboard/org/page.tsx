@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePermission, companyScope } from "@/lib/permissions";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/layout/page-header";
@@ -70,12 +71,13 @@ export default async function OrgPage() {
                 <TH>名稱</TH>
                 <TH>所屬門市</TH>
                 <TH>狀態</TH>
+                <TH></TH>
               </tr>
             </THead>
             <tbody>
               {warehouses.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>
+                  <td colSpan={5}>
                     <EmptyState message="尚無倉庫。" />
                   </td>
                 </tr>
@@ -86,6 +88,14 @@ export default async function OrgPage() {
                     <TD className="font-medium text-gray-900">{w.name}</TD>
                     <TD>{w.store?.name ?? "共用"}</TD>
                     <TD>{w.isActive ? <Badge color="green">啟用</Badge> : <Badge>停用</Badge>}</TD>
+                    <TD>
+                      <Link
+                        href={`/dashboard/warehouses/${w.id}/stock`}
+                        className="text-amber-700 hover:underline"
+                      >
+                        查看原物料庫存
+                      </Link>
+                    </TD>
                   </TR>
                 ))
               )}
