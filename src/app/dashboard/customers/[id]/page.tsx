@@ -34,7 +34,7 @@ export default async function CustomerDetailPage({
 
       {member ? (
         <>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Card>
               <CardContent>
                 <p className="text-sm text-gray-500">會員點數</p>

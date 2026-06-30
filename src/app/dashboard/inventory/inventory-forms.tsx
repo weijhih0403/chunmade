@@ -19,7 +19,7 @@ export function AdjustForm({ warehouses, items }: { warehouses: Opt[]; items: Op
   const [state, action, pending] = useActionState(adjustStockAction, initialFormState);
   return (
     <form action={action} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>倉庫</Label>
           <Select name="warehouseId" required defaultValue="">
@@ -47,7 +47,7 @@ export function AdjustForm({ warehouses, items }: { warehouses: Opt[]; items: Op
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>方向</Label>
           <Select name="mode" defaultValue="IN">
@@ -78,7 +78,7 @@ export function WasteForm({ warehouses, items }: { warehouses: Opt[]; items: Opt
   const [state, action, pending] = useActionState(wasteAction, initialFormState);
   return (
     <form action={action} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>倉庫</Label>
           <Select name="warehouseId" required defaultValue="">
@@ -106,7 +106,7 @@ export function WasteForm({ warehouses, items }: { warehouses: Opt[]; items: Opt
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>數量</Label>
           <Input name="quantity" type="number" step="0.0001" required />

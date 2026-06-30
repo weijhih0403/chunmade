@@ -45,7 +45,7 @@ export function PurchaseOrderForm({
     <form action={action} className="max-w-3xl space-y-4">
       <input type="hidden" name="lines" value={JSON.stringify(lines.filter((l) => l.itemId))} />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label>供應商</Label>
           <Select name="supplierId" required defaultValue="">

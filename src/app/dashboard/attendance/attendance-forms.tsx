@@ -21,7 +21,7 @@ export function ClockForm({ employees, token }: { employees: Opt[]; token: strin
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="token" value={token ?? ""} />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs text-gray-500">員工</label>
           <Select name="employeeId" required defaultValue="">
@@ -58,7 +58,7 @@ export function LeaveForm({ employees }: { employees: Opt[] }) {
   const [state, action, pending] = useActionState(requestLeaveAction, initialFormState);
   return (
     <form action={action} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs text-gray-500">員工</label>
           <Select name="employeeId" required defaultValue="">
@@ -83,7 +83,7 @@ export function LeaveForm({ employees }: { employees: Opt[] }) {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-xs text-gray-500">開始</label>
           <Input name="startAt" type="datetime-local" required />

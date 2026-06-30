@@ -57,7 +57,7 @@ export function ItemForm({
   return (
     <form action={formAction} className="max-w-2xl space-y-4">
       {defaults?.id && <input type="hidden" name="id" value={defaults.id} />}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="sku">SKU</Label>
           <Input id="sku" name="sku" required defaultValue={defaults?.sku} readOnly={isEdit} />
@@ -76,7 +76,7 @@ export function ItemForm({
         {err("name") && <p className="mt-1 text-xs text-red-600">{err("name")}</p>}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="type">品項類型</Label>
           <Select id="type" name="type" defaultValue={defaults?.type ?? "SALE_ITEM"}>
@@ -119,7 +119,7 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="price">售價</Label>
           <Input
@@ -142,7 +142,7 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="safetyStock">安全庫存量</Label>
           <Input

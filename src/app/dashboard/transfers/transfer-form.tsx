@@ -12,7 +12,7 @@ export function TransferForm({ warehouses, items }: { warehouses: Opt[]; items: 
   const [state, action, pending] = useActionState(transferAction, initialFormState);
   return (
     <form action={action} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>來源倉庫</Label>
           <Select name="fromWarehouseId" required defaultValue="">
@@ -40,7 +40,7 @@ export function TransferForm({ warehouses, items }: { warehouses: Opt[]; items: 
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>商品</Label>
           <Select name="itemId" required defaultValue="">

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getActor } from "@/lib/permissions";
+import { signOut } from "@/lib/auth";
 import { NAV_ITEMS } from "@/components/layout/nav";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
+import { AppShell } from "@/components/layout/app-shell";
 import { roleLabels } from "@/lib/constants";
 
 export default async function DashboardLayout({
@@ -17,13 +17,19 @@ export default async function DashboardLayout({
     (item) => !item.permission || actor.permissions.has(item.permission),
   );
 
+  async function handleSignOut() {
+    "use server";
+    await signOut({ redirectTo: "/login" });
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar items={items} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar userName={actor.name} roleLabels={roleLabels(actor.roles)} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <AppShell
+      items={items}
+      userName={actor.name}
+      roleLabels={roleLabels(actor.roles)}
+      signOutAction={handleSignOut}
+    >
+      {children}
+    </AppShell>
   );
 }
