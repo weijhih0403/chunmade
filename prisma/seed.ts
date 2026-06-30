@@ -143,7 +143,7 @@ async function main() {
     return user;
   }
 
-  const owner = await createUser("owner@chun.local", "王老闆", ["OWNER"], []);
+  const owner = await createUser("owner@chun.local", "陳老闆", ["OWNER"], []);
   await createUser("admin@chun.local", "系統管理員", ["ADMIN"], []);
   const manager = await createUser("manager@chun.local", "陳店長", ["MANAGER"], [store1.id]);
   await createUser("cashier1@chun.local", "收銀小美", ["CASHIER"], [store1.id]);
