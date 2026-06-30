@@ -12,7 +12,7 @@ export default async function PosPage() {
   return (
     <div>
       <PageHeader title="POS 結帳" description={`門市：${ctx.storeName}`} />
-      <PosClient products={catalog} />
+      <PosClient products={catalog} storeName={ctx.storeName} />
     </div>
   );
 }

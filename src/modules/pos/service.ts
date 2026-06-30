@@ -45,6 +45,7 @@ export async function getPosCatalog(actor: Actor) {
     id: i.id,
     name: i.name,
     sku: i.sku,
+    barcode: i.barcode ?? null,
     price: Number(i.price),
     categoryName: i.category?.name ?? "未分類",
   }));

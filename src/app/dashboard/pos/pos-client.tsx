@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { checkoutAction, type CheckoutResult } from "@/modules/pos/checkout";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
+import { printReceipt, type ReceiptData } from "@/lib/print/receipt";
 import { OrderChannel, PaymentMethod } from "@prisma/client";
 
-type Product = { id: string; name: string; sku: string; price: number; categoryName: string };
+type Product = {
+  id: string;
+  name: string;
+  sku: string;
+  barcode: string | null;
+  price: number;
+  categoryName: string;
+};
 type CartLine = { itemId: string; name: string; price: number; quantity: number };
 
 const CHANNEL_LABELS: Record<OrderChannel, string> = {
@@ -25,13 +33,23 @@ function newKey() {
   return (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).toString();
 }
 
-export function PosClient({ products }: { products: Product[] }) {
+export function PosClient({
+  products,
+  storeName,
+}: {
+  products: Product[];
+  storeName: string;
+}) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [channel, setChannel] = useState<OrderChannel>("TAKEOUT");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [tendered, setTendered] = useState<string>("");
   const [idempotencyKey, setIdempotencyKey] = useState<string>(newKey);
   const [result, setResult] = useState<CheckoutResult | null>(null);
+  const [scan, setScan] = useState<string>("");
+  const [scanError, setScanError] = useState<string>("");
+  const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
+  const scanRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
 
   const categories = useMemo(() => {
@@ -65,21 +83,63 @@ export function PosClient({ products }: { products: Product[] }) {
     );
   }
 
+  function handleScan() {
+    const code = scan.trim();
+    if (!code) return;
+    const lower = code.toLowerCase();
+    const product = products.find(
+      (p) => p.barcode?.toLowerCase() === lower || p.sku.toLowerCase() === lower,
+    );
+    if (product) {
+      addToCart(product);
+      setScan("");
+      setScanError("");
+    } else {
+      setScanError(`找不到條碼 / SKU：${code}`);
+      setScan("");
+    }
+    scanRef.current?.focus();
+  }
+
   function checkout() {
     if (cart.length === 0) return;
+    const snapshotLines = cart.map((l) => ({
+      name: l.name,
+      quantity: l.quantity,
+      price: l.price,
+      lineTotal: l.price * l.quantity,
+    }));
+    const snapshotTotal = total;
+    const snapshotTendered = paymentMethod === "CASH" ? Number(tendered || 0) : total;
+    const snapshotChange = changeDue;
+    const snapshotChannel = CHANNEL_LABELS[channel];
+    const snapshotPayment = PAYMENT_LABELS[paymentMethod] ?? paymentMethod;
     startTransition(async () => {
       const res = await checkoutAction({
         idempotencyKey,
         channel,
         paymentMethod,
-        amountTendered: paymentMethod === "CASH" ? Number(tendered || 0) : total,
+        amountTendered: snapshotTendered,
         lines: cart.map((l) => ({ itemId: l.itemId, quantity: l.quantity })),
       });
       setResult(res);
       if (res.ok) {
+        setLastReceipt({
+          storeName,
+          orderNo: res.orderNo,
+          dateTime: new Date().toLocaleString("zh-TW"),
+          channelLabel: snapshotChannel,
+          paymentLabel: snapshotPayment,
+          lines: snapshotLines,
+          total: snapshotTotal,
+          tendered: snapshotTendered,
+          change: snapshotChange,
+        });
         setCart([]);
         setTendered("");
+        setScanError("");
         setIdempotencyKey(newKey());
+        scanRef.current?.focus();
       }
     });
   }
@@ -88,6 +148,27 @@ export function PosClient({ products }: { products: Product[] }) {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* 商品區 */}
       <div className="lg:col-span-2">
+        <div className="mb-4">
+          <label className="mb-1 block text-xs text-gray-500">
+            掃描條碼 / 輸入 SKU（掃描槍掃到會自動加入）
+          </label>
+          <input
+            ref={scanRef}
+            value={scan}
+            onChange={(e) => setScan(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleScan();
+              }
+            }}
+            autoFocus
+            placeholder="掃描條碼或輸入 SKU 後按 Enter"
+            className="h-11 w-full rounded-lg border border-gray-300 px-3 text-base focus:border-amber-400 focus:outline-none"
+          />
+          {scanError && <p className="mt-1 text-sm text-red-600">{scanError}</p>}
+        </div>
+
         {categories.length === 0 ? (
           <p className="py-10 text-center text-gray-400">尚無可販售商品，請先於商品主檔建立。</p>
         ) : (
@@ -208,6 +289,16 @@ export function PosClient({ products }: { products: Product[] }) {
                 ? `完成！單號 ${result.orderNo}，找零 NT$ ${result.change}${result.reused ? "（重複請求，已沿用既有訂單）" : ""}`
                 : result.message}
             </div>
+          )}
+
+          {lastReceipt && (
+            <Button
+              variant="outline"
+              onClick={() => printReceipt(lastReceipt)}
+              className="h-11 w-full"
+            >
+              列印收據（單號 {lastReceipt.orderNo}）
+            </Button>
           )}
         </div>
       </div>
