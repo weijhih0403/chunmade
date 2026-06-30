@@ -5,7 +5,7 @@ import { type Actor, companyScope } from "@/lib/permissions";
 
 export async function listItems(
   actor: Actor,
-  filters?: { type?: ItemType; search?: string },
+  filters?: { type?: ItemType; types?: ItemType[]; search?: string },
 ) {
   const scope = companyScope(actor);
   return prisma.item.findMany({
@@ -13,6 +13,7 @@ export async function listItems(
       ...scope,
       deletedAt: null,
       ...(filters?.type ? { type: filters.type } : {}),
+      ...(filters?.types ? { type: { in: filters.types } } : {}),
       ...(filters?.search
         ? {
             OR: [

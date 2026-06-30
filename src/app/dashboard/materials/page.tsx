@@ -9,29 +9,29 @@ import { ITEM_TYPE_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-export default async function ItemsPage() {
+export default async function MaterialsPage() {
   const actor = await requirePermission("catalog.read");
   const items = await listItems(actor, {
-    types: ["FINISHED_GOOD", "SALE_ITEM", "SERVICE"],
+    types: ["RAW_MATERIAL", "SEMI_FINISHED"],
   });
   const canManage = actor.permissions.has("catalog.manage");
 
   return (
     <div>
       <PageHeader
-        title="商品主檔"
-        description="成品、銷售商品與服務項目（原料/半成品請見「原物料」）"
+        title="原物料"
+        description="原料與半成品（成品/銷售商品請見「商品」）"
         action={
           canManage ? (
             <Link href="/dashboard/items/new">
-              <Button>新增商品</Button>
+              <Button>新增原物料</Button>
             </Link>
           ) : null
         }
       />
 
       {items.length === 0 ? (
-        <EmptyState message="尚無商品，請先新增。" />
+        <EmptyState message="尚無原物料，請先新增。" />
       ) : (
         <Table>
           <THead>
