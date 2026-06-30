@@ -60,12 +60,27 @@ async function main() {
 
   const store1 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S01" } },
-    create: { companyId: company.id, code: "S01", name: "淳手作 本店", phone: "02-1111-1111" },
+    create: { companyId: company.id, code: "S01", name: "淺草" },
     update: {},
   });
   const store2 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S02" } },
-    create: { companyId: company.id, code: "S02", name: "淳手作 分店", phone: "02-2222-2222" },
+    create: { companyId: company.id, code: "S02", name: "水堆淳手作" },
+    update: {},
+  });
+  await prisma.store.upsert({
+    where: { companyId_code: { companyId: company.id, code: "S03" } },
+    create: { companyId: company.id, code: "S03", name: "台北灣淳手作" },
+    update: {},
+  });
+  await prisma.store.upsert({
+    where: { companyId_code: { companyId: company.id, code: "S04" } },
+    create: { companyId: company.id, code: "S04", name: "竹圍淳手作" },
+    update: {},
+  });
+  await prisma.store.upsert({
+    where: { companyId_code: { companyId: company.id, code: "S05" } },
+    create: { companyId: company.id, code: "S05", name: "義山淳手作" },
     update: {},
   });
 
@@ -262,6 +277,21 @@ async function main() {
     { sku: "SEMI-SYRUP", name: "糖水(半成品)", type: "SEMI_FINISHED", unitId: uMl.id, categoryId: catRaw.id, cost: 0, shelfLife: 7 },
     { sku: "FG-TOFU", name: "傳統豆花", type: "FINISHED_GOOD", unitId: uCup.id, categoryId: catDessert.id, price: 45, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
     { sku: "SALE-SOYMILK", name: "古早味豆漿", type: "SALE_ITEM", unitId: uCup.id, categoryId: catDrink.id, price: 35, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
+    // 配料 / 原料（批次匯入）
+    ...[
+      "芋圓", "地瓜圓", "紫地瓜", "Q圓", "湯圓", "粉圓", "粉條", "粉角",
+      "剉冰糖水", "蜜花生", "桂圓", "仙草汁", "黑糖漿", "粉粿", "大薏仁",
+      "熟片", "杏仁", "布丁", "麥角", "花豆", "綠豆", "特砂", "紫米",
+      "仙草茶", "冬瓜茶", "酸梅湯", "仙草凍", "冰淇淋", "雪綿冰", "冬瓜磚",
+      "紅茶", "米苔目", "仙草包", "紅豆糖包", "煉乳", "奶水", "奶精", "波波球",
+      "三色蒟蒻", "鳳梨椰果", "芋頭", "地瓜",
+    ].map((name, idx) => ({
+      sku: `ING-${String(idx + 1).padStart(3, "0")}`,
+      name,
+      type: "RAW_MATERIAL" as const,
+      unitId: uG.id,
+      categoryId: catRaw.id,
+    })),
   ];
 
   const itemMap: Record<string, { id: string }> = {};
