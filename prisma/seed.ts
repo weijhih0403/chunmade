@@ -60,22 +60,22 @@ async function main() {
 
   const store1 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S01" } },
-    create: { companyId: company.id, code: "S01", name: "淺草" },
+    create: { companyId: company.id, code: "S01", name: "淺草", phone: "02-8631-0489" },
     update: {},
   });
   const store2 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S02" } },
-    create: { companyId: company.id, code: "S02", name: "水堆淳手作" },
+    create: { companyId: company.id, code: "S02", name: "水堆淳手作", phone: "02-2626-5216" },
     update: {},
   });
   await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S03" } },
-    create: { companyId: company.id, code: "S03", name: "台北灣淳手作" },
+    create: { companyId: company.id, code: "S03", name: "台北灣淳手作", phone: "02-2629-9099" },
     update: {},
   });
   await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S04" } },
-    create: { companyId: company.id, code: "S04", name: "竹圍淳手作" },
+    create: { companyId: company.id, code: "S04", name: "竹圍淳手作", phone: "02-2808-0113" },
     update: {},
   });
   await prisma.store.upsert({
