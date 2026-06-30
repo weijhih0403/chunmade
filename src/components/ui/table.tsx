@@ -14,7 +14,7 @@ export function THead(props: React.HTMLAttributes<HTMLTableSectionElement>) {
 }
 
 export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3 font-medium", className)} {...props} />;
+  return <th className={cn("whitespace-nowrap px-4 py-3 font-medium", className)} {...props} />;
 }
 
 export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
@@ -22,7 +22,7 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
 }
 
 export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3 text-gray-700", className)} {...props} />;
+  return <td className={cn("whitespace-nowrap px-4 py-3 text-gray-700", className)} {...props} />;
 }
 
 export function EmptyState({ message = "目前沒有資料" }: { message?: string }) {
