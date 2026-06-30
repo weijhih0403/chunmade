@@ -29,7 +29,6 @@ export const NAV_ITEMS: NavItem[] = [
 
   { label: "員工", href: "/dashboard/employees", permission: "employee.read", group: "人事" },
   { label: "排班", href: "/dashboard/schedule", permission: "schedule.read", group: "人事" },
-  { label: "出勤", href: "/dashboard/attendance", permission: "attendance.read", group: "人事" },
 
   { label: "報表", href: "/dashboard/reports", permission: "report.read", group: "報表" },
 
