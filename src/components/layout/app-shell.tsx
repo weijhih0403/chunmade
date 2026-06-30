@@ -9,11 +9,9 @@ import type { NavItem } from "./nav";
 
 function NavLinks({
   items,
-  collapsed = false,
   onNavigate,
 }: {
   items: NavItem[];
-  collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -27,11 +25,9 @@ function NavLinks({
     <nav className="flex-1 overflow-y-auto px-2 py-3">
       {Object.entries(groups).map(([group, groupItems]) => (
         <div key={group} className="mb-4">
-          {!collapsed && (
-            <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {group}
-            </p>
-          )}
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            {group}
+          </p>
           {groupItems.map((item) => {
             const active =
               pathname === item.href ||
@@ -49,7 +45,7 @@ function NavLinks({
                 )}
                 title={item.label}
               >
-                {collapsed ? item.label.charAt(0) : item.label}
+                {item.label}
               </Link>
             );
           })}
@@ -94,7 +90,7 @@ export function AppShell({
             {collapsed ? "»" : "«"}
           </button>
         </div>
-        <NavLinks items={items} collapsed={collapsed} />
+        {!collapsed && <NavLinks items={items} />}
       </aside>
 
       {/* 手機/平板抽屜選單 */}
