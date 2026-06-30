@@ -17,7 +17,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "分類", href: "/dashboard/categories", permission: "catalog.read", group: "基礎資料" },
   { label: "單位", href: "/dashboard/units", permission: "catalog.read", group: "基礎資料" },
   { label: "供應商", href: "/dashboard/suppliers", permission: "purchase.read", group: "基礎資料" },
-  { label: "客戶 / 會員", href: "/dashboard/customers", permission: "customer.read", group: "基礎資料" },
 
   { label: "庫存", href: "/dashboard/inventory", permission: "inventory.read", group: "庫存" },
   { label: "調撥", href: "/dashboard/transfers", permission: "inventory.transfer", group: "庫存" },
