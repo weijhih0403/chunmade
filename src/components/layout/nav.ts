@@ -12,6 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   { label: "POS 結帳", href: "/dashboard/pos", permission: "pos.operate", group: "營運" },
   { label: "銷售訂單", href: "/dashboard/sales", permission: "sales.read", group: "營運" },
+  { label: "POS 點餐記錄", href: "/dashboard/pos-orders", permission: "sales.read", group: "營運" },
 
   { label: "商品", href: "/dashboard/items", permission: "catalog.read", group: "基礎資料" },
   { label: "分類", href: "/dashboard/categories", permission: "catalog.read", group: "基礎資料" },

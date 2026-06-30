@@ -11,6 +11,7 @@ const envSchema = z.object({
   AUTH_MAX_LOGIN_ATTEMPTS: z.coerce.number().int().positive().default(5),
   AUTH_LOCK_MINUTES: z.coerce.number().int().positive().default(15),
   PRINT_AGENT_SHARED_SECRET: z.string().default("dev-print-agent-secret"),
+  POS_SYNC_API_KEY: z.string().default("dev-pos-sync-secret"),
   PRINT_SIMULATION_MODE: z
     .enum(["true", "false"])
     .default("true")
