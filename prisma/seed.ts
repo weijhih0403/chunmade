@@ -68,17 +68,17 @@ async function main() {
     create: { companyId: company.id, code: "S02", name: "水堆淳手作", phone: "02-2626-5216" },
     update: {},
   });
-  await prisma.store.upsert({
+  const store3 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S03" } },
     create: { companyId: company.id, code: "S03", name: "台北灣淳手作", phone: "02-2629-9099" },
     update: {},
   });
-  await prisma.store.upsert({
+  const store4 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S04" } },
     create: { companyId: company.id, code: "S04", name: "竹圍淳手作", phone: "02-2808-0113" },
     update: {},
   });
-  await prisma.store.upsert({
+  const store5 = await prisma.store.upsert({
     where: { companyId_code: { companyId: company.id, code: "S05" } },
     create: { companyId: company.id, code: "S05", name: "義山淳手作" },
     update: {},
@@ -86,12 +86,27 @@ async function main() {
 
   const wh1 = await prisma.warehouse.upsert({
     where: { companyId_code: { companyId: company.id, code: "W01" } },
-    create: { companyId: company.id, storeId: store1.id, code: "W01", name: "本店倉庫" },
+    create: { companyId: company.id, storeId: store1.id, code: "W01", name: "淺草倉庫" },
     update: {},
   });
   const wh2 = await prisma.warehouse.upsert({
     where: { companyId_code: { companyId: company.id, code: "W02" } },
-    create: { companyId: company.id, storeId: store2.id, code: "W02", name: "分店倉庫" },
+    create: { companyId: company.id, storeId: store2.id, code: "W02", name: "水堆淳手作倉庫" },
+    update: {},
+  });
+  await prisma.warehouse.upsert({
+    where: { companyId_code: { companyId: company.id, code: "W03" } },
+    create: { companyId: company.id, storeId: store3.id, code: "W03", name: "台北灣淳手作倉庫" },
+    update: {},
+  });
+  await prisma.warehouse.upsert({
+    where: { companyId_code: { companyId: company.id, code: "W04" } },
+    create: { companyId: company.id, storeId: store4.id, code: "W04", name: "竹圍淳手作倉庫" },
+    update: {},
+  });
+  await prisma.warehouse.upsert({
+    where: { companyId_code: { companyId: company.id, code: "W05" } },
+    create: { companyId: company.id, storeId: store5.id, code: "W05", name: "義山淳手作倉庫" },
     update: {},
   });
 
