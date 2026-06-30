@@ -2,29 +2,18 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listCustomers } from "@/modules/crm/service";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
 import { formatTWD } from "@/lib/money";
-import { CustomerForm } from "./customer-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function CustomersPage() {
   const actor = await requirePermission("customer.read");
   const customers = await listCustomers(actor);
-  const canManage = actor.permissions.has("customer.manage");
 
   return (
     <div className="space-y-4">
       <PageHeader title="客戶 / 會員" description="客戶資料、會員點數與儲值金" />
-
-      {canManage && (
-        <Card>
-          <CardContent>
-            <CustomerForm />
-          </CardContent>
-        </Card>
-      )}
 
       {customers.length === 0 ? (
         <EmptyState message="尚無客戶。" />
