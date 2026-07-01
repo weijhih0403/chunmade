@@ -18,14 +18,14 @@ export function BrandMark({
       title="淳手作"
     >
       <Image
-        src="/brand-logo.png"
+        src={collapsed ? "/brand-icon.png" : "/brand-logo.png"}
         alt="淳手作圓仔湯"
         width={collapsed ? 36 : centered ? 200 : 160}
         height={collapsed ? 36 : centered ? 56 : 48}
         className={cn(
           "object-contain",
           centered ? "mx-auto h-14 w-auto max-w-[14rem]" : "object-left",
-          !centered && (collapsed ? "h-9 w-9" : "h-10 w-auto max-w-[10.5rem]"),
+          collapsed ? "h-9 w-9" : !centered && "h-10 w-auto max-w-[10.5rem]",
         )}
         priority
       />

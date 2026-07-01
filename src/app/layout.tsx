@@ -5,8 +5,8 @@ export const metadata: Metadata = {
   title: "淳手作 ERP",
   description: "淳手作手作食品 / 飲料門市 ERP 系統",
   icons: {
-    icon: "/brand-logo.png",
-    apple: "/brand-logo.png",
+    icon: "/brand-icon.png",
+    apple: "/brand-icon.png",
   },
 };
 
