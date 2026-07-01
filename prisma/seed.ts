@@ -285,7 +285,7 @@ async function main() {
   };
   const itemSeeds: ItemSeed[] = [
     { sku: "RAW-SOYBEAN", name: "黃豆", type: "RAW_MATERIAL", unitId: uBag.id, categoryId: catRaw.id, cost: 0.08 },
-    { sku: "RAW-SUGAR", name: "砂糖", type: "RAW_MATERIAL", unitId: uG.id, categoryId: catRaw.id, cost: 0.03, reorder: 3000, safety: 1000 },
+    { sku: "RAW-SUGAR", name: "砂糖", type: "RAW_MATERIAL", unitId: uBag.id, categoryId: catRaw.id, cost: 0.03, reorder: 10, safety: 3 },
     { sku: "RAW-WATER", name: "水", type: "RAW_MATERIAL", unitId: uMl.id, categoryId: catRaw.id, cost: 0.001, track: false },
     { sku: "PACK-CUP", name: "外帶杯", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 1.5, reorder: 500, safety: 200 },
     { sku: "PACK-LID", name: "杯蓋", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 0.8, reorder: 500, safety: 200 },
@@ -305,8 +305,8 @@ async function main() {
       sku: `ING-${String(idx + 1).padStart(3, "0")}`,
       name,
       type: "RAW_MATERIAL" as const,
-      // 豆類以「包」計數，其餘以公克
-      unitId: ["花豆", "綠豆"].includes(name) ? uBag.id : uG.id,
+      // 原物料一律以「包」計數
+      unitId: uBag.id,
       categoryId: catRaw.id,
     })),
   ];
@@ -340,7 +340,7 @@ async function main() {
   };
 
   // 11) 配方
-  // 豆漿：黃豆 120g + 水 1000ml → 產出 1000ml
+  // 豆漿：黃豆 1 包 + 水 1000ml → 產出 1000ml
   const soymilkRecipe = await prisma.recipe.create({
     data: { companyId: company.id, productId: mustItem("SEMI-SOYMILK"), name: "古法豆漿配方" },
   });
@@ -349,7 +349,7 @@ async function main() {
   });
   await prisma.recipeItem.createMany({
     data: [
-      { companyId: company.id, versionId: soymilkVer.id, materialId: mustItem("RAW-SOYBEAN"), quantity: D(120), wasteRate: D(0.02) },
+      { companyId: company.id, versionId: soymilkVer.id, materialId: mustItem("RAW-SOYBEAN"), quantity: D(1), wasteRate: D(0.02) },
       { companyId: company.id, versionId: soymilkVer.id, materialId: mustItem("RAW-WATER"), quantity: D(1000) },
     ],
   });
@@ -413,7 +413,7 @@ async function main() {
     });
   }
   await setInitialStock("RAW-SOYBEAN", wh1.id, 0, 0.08);
-  await setInitialStock("RAW-SUGAR", wh1.id, 5000, 0.03);
+  await setInitialStock("RAW-SUGAR", wh1.id, 0, 0.03);
   await setInitialStock("PACK-CUP", wh1.id, 1000, 1.5);
   await setInitialStock("PACK-LID", wh1.id, 1000, 0.8);
   // 故意讓杯子接近補貨點以展示低庫存提醒

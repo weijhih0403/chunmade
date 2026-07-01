@@ -24,8 +24,8 @@ async function main() {
   const company = await prisma.company.findFirst({ where: { isActive: true } });
   if (!company) throw new Error("找不到啟用中的公司");
 
-  const unitG = await prisma.unit.findFirst({ where: { companyId: company.id, code: "g" } });
-  if (!unitG) throw new Error("找不到單位『公克 (g)』");
+  const unitBag = await prisma.unit.findFirst({ where: { companyId: company.id, code: "bag" } });
+  if (!unitBag) throw new Error("找不到單位『包 (bag)』");
 
   const catRaw = await prisma.category.findFirst({ where: { companyId: company.id, code: "RAW" } });
 
@@ -65,7 +65,7 @@ async function main() {
         sku,
         name,
         type: "RAW_MATERIAL",
-        baseUnitId: unitG.id,
+        baseUnitId: unitBag.id,
         categoryId: catRaw?.id ?? null,
         price: 0,
         isActive: true,
