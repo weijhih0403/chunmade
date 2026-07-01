@@ -1,15 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Tesseract from "tesseract.js";
 import { createShiftClosingAction } from "@/modules/shift-closing/actions";
-import { cleanOcrText, matchSignatureToEmployee } from "@/modules/shift-closing/match-signature";
+import {
+  cleanOcrText,
+  matchSignatureToEmployee,
+  rankEmployeesBySignature,
+} from "@/modules/shift-closing/match-signature";
+import { preprocessSignatureForOcr } from "@/modules/shift-closing/preprocess-signature";
 import { initialFormState } from "@/lib/forms";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { formatDate } from "@/lib/dates";
-import { SignaturePad } from "./signature-pad";
+import { SignaturePad, type SignaturePadHandle } from "./signature-pad";
 
 type StoreOpt = { id: string; name: string };
 type EmpOpt = { id: string; name: string };
@@ -39,8 +44,33 @@ export function ShiftClosingWizard({
   const [matchedEmployeeId, setMatchedEmployeeId] = useState("");
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<{ id: string; name: string; score: number }[]>(
+    [],
+  );
 
+  const signaturePadRef = useRef<SignaturePadHandle>(null);
   const [state, formAction, pending] = useActionState(createShiftClosingAction, initialFormState);
+
+  /** 簽名全螢幕時鎖住背景捲動，避免手機書寫時頁面跟著動 */
+  useEffect(() => {
+    if (step !== "signature") return;
+    const scrollY = window.scrollY;
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.overflow = "hidden";
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.overflow = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [step]);
 
   useEffect(() => {
     if (state.ok) {
@@ -66,25 +96,35 @@ export function ShiftClosingWizard({
     setRecognizing(true);
     setOcrError(null);
     try {
-      const { data } = await Tesseract.recognize(signatureData, "chi_tra", {
-        logger: () => {},
+      const processed = await preprocessSignatureForOcr(signatureData);
+      const worker = await Tesseract.createWorker("chi_tra");
+      await worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
       });
+      const { data } = await worker.recognize(processed);
+      await worker.terminate();
       const cleaned = cleanOcrText(data.text);
       const confidence = data.confidence;
       setRecognizedText(cleaned);
       setOcrConfidence(confidence);
 
+      const ranked = rankEmployeesBySignature(cleaned, employees);
+      setSuggestions(ranked.map((r) => ({ ...r.employee, score: r.score })));
+
       const { employee, score } = matchSignatureToEmployee(cleaned, employees);
       if (employee && score >= 40) {
         setSignerName(employee.name);
         setMatchedEmployeeId(employee.id);
+      } else if (ranked[0]) {
+        setSignerName(ranked[0].employee.name);
+        setMatchedEmployeeId(ranked[0].employee.id);
       } else if (cleaned) {
         setSignerName(cleaned);
         setMatchedEmployeeId("");
       } else {
         setSignerName("");
         setMatchedEmployeeId("");
-        setOcrError("無法辨識簽名，請手動選擇或輸入姓名");
+        setOcrError("無法辨識簽名，請點選下方員工姓名");
       }
       setStep("result");
     } catch {
@@ -174,28 +214,53 @@ export function ShiftClosingWizard({
 
   if (step === "signature") {
     return (
-      <div className="mx-auto max-w-lg space-y-4">
-        <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
-          520碗 {qty.qty520} · 850碗 {qty.qty850} · 700杯 {qty.qty700} · 500杯 {qty.qty500}
+      <div
+        className="fixed inset-0 z-[100] flex flex-col bg-white touch-none"
+        style={{ touchAction: "none" }}
+      >
+        <header className="shrink-0 border-b border-gray-200 px-4 py-3 safe-area-inset-top">
+          <p className="text-center text-base font-semibold text-gray-900">手寫簽名</p>
+          <p className="mt-1 text-center text-xs text-gray-500">
+            520碗 {qty.qty520} · 850碗 {qty.qty850} · 700杯 {qty.qty700} · 500杯 {qty.qty500}
+          </p>
+        </header>
+
+        <div className="min-h-0 flex-1 p-3">
+          <SignaturePad ref={signaturePadRef} fill thickStroke onChange={setSignatureData} />
         </div>
 
-        <SignaturePad onChange={setSignatureData} />
+        {ocrError && (
+          <p className="shrink-0 px-4 text-center text-sm text-red-600">{ocrError}</p>
+        )}
 
-        {ocrError && <p className="text-sm text-red-600">{ocrError}</p>}
-
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={() => setStep("quantities")}>
-            上一步
-          </Button>
+        <footer className="shrink-0 space-y-2 border-t border-gray-200 bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setStep("quantities")}>
+              上一步
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              disabled={!signatureData}
+              onClick={() => {
+                signaturePadRef.current?.clear();
+                setSignatureData(null);
+              }}
+            >
+              清除重簽
+            </Button>
+          </div>
           <Button
             type="button"
-            className="flex-1"
+            className="w-full"
+            size="lg"
             disabled={!signatureData || recognizing}
             onClick={recognizeSignature}
           >
             {recognizing ? "辨識簽名中…" : "完成簽名並辨識"}
           </Button>
-        </div>
+        </footer>
       </div>
     );
   }
@@ -225,6 +290,31 @@ export function ShiftClosingWizard({
             </div>
           )}
         </dl>
+        {suggestions.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs text-gray-500">建議簽名人（點選確認）</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setSignerName(s.name);
+                    setMatchedEmployeeId(s.id);
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-sm ${
+                    matchedEmployeeId === s.id
+                      ? "bg-gray-900 text-white"
+                      : "bg-white border border-gray-300 text-gray-800 hover:bg-gray-50"
+                  }`}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {ocrError && <p className="mt-2 text-xs text-amber-800">{ocrError}</p>}
       </div>
 
       <form action={formAction} className="space-y-4">
@@ -240,7 +330,7 @@ export function ShiftClosingWizard({
         <input type="hidden" name="matchedEmployeeId" value={matchedEmployeeId} />
 
         <div>
-          <Label htmlFor="signerName">簽名人（可修改）</Label>
+          <Label htmlFor="signerName">簽名人（可修改，建議直接點選上方建議）</Label>
           <Input
             id="signerName"
             name="signerName"

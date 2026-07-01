@@ -33,6 +33,32 @@ export function matchSignatureToEmployee(
   return { employee: best, score: bestScore };
 }
 
+/** 回傳 OCR 可能對應的員工（最多 3 位） */
+export function rankEmployeesBySignature(
+  recognizedText: string,
+  employees: EmployeeCandidate[],
+  limit = 3,
+): { employee: EmployeeCandidate; score: number }[] {
+  const raw = recognizedText.replace(/\s/g, "").trim();
+  if (!raw) return [];
+
+  return employees
+    .map((emp) => {
+      const name = emp.name.trim();
+      let score = 0;
+      if (raw === name) score = 100;
+      else if (name.includes(raw) || raw.includes(name)) score = 85;
+      else {
+        const overlap = [...raw].filter((c) => name.includes(c)).length;
+        score = (overlap / Math.max(raw.length, name.length)) * 70;
+      }
+      return { employee: emp, score };
+    })
+    .filter((r) => r.score >= 25)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
 /** 清理 OCR 辨識文字（常見雜訊） */
 export function cleanOcrText(text: string) {
   return text
