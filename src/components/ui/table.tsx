@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-      <table className={cn("w-full text-sm", className)} {...props} />
+      <table className={cn("w-full table-fixed text-sm", className)} {...props} />
     </div>
   );
 }
@@ -22,7 +22,7 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
 }
 
 export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("whitespace-nowrap px-4 py-3 text-gray-700", className)} {...props} />;
+  return <td className={cn("px-3 py-2.5 text-gray-700 md:px-4 md:py-3", className)} {...props} />;
 }
 
 export function EmptyState({ message = "目前沒有資料" }: { message?: string }) {

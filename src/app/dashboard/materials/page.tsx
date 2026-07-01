@@ -88,34 +88,38 @@ export default async function MaterialsPage({
           <Table>
             <THead>
               <tr>
-                <TH>SKU</TH>
-                <TH>名稱</TH>
-                <TH>類型</TH>
-                <TH>分類</TH>
-                <TH>單位</TH>
-                <TH className="text-right">售價</TH>
-                <TH className="text-right">標準成本</TH>
-                <TH>庫管</TH>
-                {canManage && <TH>操作</TH>}
+                <TH className="w-[14%]">SKU</TH>
+                <TH className="w-[18%]">名稱</TH>
+                <TH className="w-[10%]">類型</TH>
+                <TH className="w-[12%]">分類</TH>
+                <TH className="w-[6%]">單位</TH>
+                <TH className="w-[8%] text-right">售價</TH>
+                <TH className="w-[8%] text-right">標準成本</TH>
+                <TH className="w-[8%]">庫管</TH>
+                {canManage && <TH className="w-[16%]">操作</TH>}
               </tr>
             </THead>
             <tbody>
               {items.map((it) => (
                 <TR key={it.id}>
-                  <TD className="font-mono text-xs">{it.sku}</TD>
-                  <TD className="font-medium text-gray-900">{it.name}</TD>
+                  <TD className="truncate font-mono text-xs" title={it.sku}>
+                    {it.sku}
+                  </TD>
+                  <TD className="font-medium text-gray-900">
+                    <span className="line-clamp-2 whitespace-normal">{it.name}</span>
+                  </TD>
                   <TD>
                     <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
                   </TD>
-                  <TD>{it.category?.name ?? "—"}</TD>
-                  <TD>{it.baseUnit.name}</TD>
-                  <TD className="text-right">{formatTWD(it.price)}</TD>
-                  <TD className="text-right">{formatTWD(it.standardCost)}</TD>
+                  <TD className="truncate">{it.category?.name ?? "—"}</TD>
+                  <TD className="whitespace-nowrap">{it.baseUnit.name}</TD>
+                  <TD className="whitespace-nowrap text-right">{formatTWD(it.price)}</TD>
+                  <TD className="whitespace-nowrap text-right">{formatTWD(it.standardCost)}</TD>
                   <TD>
                     {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
                   </TD>
                   {canManage && (
-                    <TD>
+                    <TD className="whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <Link
                           href={`/dashboard/items/${it.id}/edit?from=materials`}
