@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { NavItem } from "./nav";
 import { BrandMark } from "./brand-mark";
+import { NavIcon, SidebarToggleIcon } from "./nav-icons";
 
 const COLLAPSE_KEY = "erp-sidebar-collapsed";
 
@@ -14,19 +15,58 @@ function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 }
 
-function NavLinks({
-  items,
-  onNavigate,
-}: {
-  items: NavItem[];
-  onNavigate?: () => void;
-}) {
-  const pathname = usePathname();
-
-  const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
+function groupItems(items: NavItem[]) {
+  return items.reduce<Record<string, NavItem[]>>((acc, item) => {
     (acc[item.group] ??= []).push(item);
     return acc;
   }, {});
+}
+
+function NavLinks({
+  items,
+  collapsed,
+  onNavigate,
+}: {
+  items: NavItem[];
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}) {
+  const pathname = usePathname();
+  const groups = groupItems(items);
+
+  if (collapsed) {
+    return (
+      <nav className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
+        {Object.entries(groups).map(([group, groupItems], groupIndex) => (
+          <div key={group} className={cn(groupIndex > 0 && "mt-1 border-t border-gray-100 pt-1")}>
+            {groupItems.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={cn(
+                    "group relative mx-auto mb-0.5 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+                    active
+                      ? "bg-amber-100 text-amber-800 shadow-sm ring-1 ring-amber-200/80"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
+                  )}
+                >
+                  {active && (
+                    <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-amber-500" />
+                  )}
+                  <NavIcon href={item.href} />
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <nav className="flex-1 overflow-y-auto px-2 py-3">
@@ -43,12 +83,13 @@ function NavLinks({
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
-                  "mb-0.5 block rounded-lg px-3 py-2 text-sm transition-colors",
+                  "mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                   active
                     ? "bg-amber-100 font-medium text-amber-900"
                     : "text-gray-700 hover:bg-gray-100",
                 )}
               >
+                <NavIcon href={item.href} className={cn(active ? "text-amber-700" : "text-gray-400")} />
                 {item.label}
               </Link>
             );
@@ -103,14 +144,14 @@ export function AppShell({
       <aside
         className={cn(
           "hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-white transition-[width] duration-200 md:flex",
-          collapsed ? "w-[3.25rem]" : "w-56",
+          collapsed ? "w-16" : "w-56",
         )}
       >
         <div
           className={cn(
-            "flex border-b border-gray-100",
+            "flex shrink-0 border-b border-gray-100",
             collapsed
-              ? "flex-col items-center gap-1 py-2"
+              ? "flex-col items-center gap-2 px-2 py-3"
               : "h-14 items-center justify-between gap-2 px-3",
           )}
         >
@@ -118,14 +159,17 @@ export function AppShell({
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-gray-500 hover:bg-gray-100"
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-800",
+              collapsed ? "h-8 w-8" : "h-8 w-8",
+            )}
             aria-label={collapsed ? "展開選單" : "收合選單"}
             title={collapsed ? "展開選單" : "收合選單"}
           >
-            {collapsed ? "»" : "«"}
+            <SidebarToggleIcon collapsed={collapsed} />
           </button>
         </div>
-        {!collapsed && <NavLinks items={items} />}
+        <NavLinks items={items} collapsed={collapsed} />
       </aside>
 
       {mobileOpen && (
