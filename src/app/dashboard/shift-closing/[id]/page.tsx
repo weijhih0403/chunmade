@@ -48,20 +48,12 @@ export default async function ShiftClosingDetailPage({
       </Card>
 
       <Card className="p-4">
-        <p className="text-sm font-medium text-gray-700">簽名確認</p>
+        <p className="text-sm font-medium text-gray-700">手寫簽名</p>
         <dl className="mt-3 space-y-2 text-sm">
-          <div>
-            <dt className="text-gray-400">簽名人</dt>
-            <dd className="font-medium">{report.signerName ?? "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-400">OCR 辨識</dt>
-            <dd>{report.recognizedText ?? "—"}</dd>
-          </div>
-          {report.ocrConfidence != null && (
+          {report.signerName && (
             <div>
-              <dt className="text-gray-400">信心度</dt>
-              <dd>{report.ocrConfidence.toFixed(0)}%</dd>
+              <dt className="text-gray-400">簽名人</dt>
+              <dd className="font-medium">{report.signerName}</dd>
             </div>
           )}
           <div>
@@ -72,7 +64,7 @@ export default async function ShiftClosingDetailPage({
         {report.signatureData && (
           <div className="mt-4 rounded-lg border bg-white p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={report.signatureData} alt="簽名" className="mx-auto max-h-40" />
+            <img src={report.signatureData} alt="簽名" className="mx-auto max-h-48" />
           </div>
         )}
       </Card>

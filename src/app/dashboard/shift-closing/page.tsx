@@ -27,7 +27,7 @@ export default async function ShiftClosingPage() {
     <div className="space-y-8">
       <PageHeader
         title="班結表"
-        description="登記班末 520碗 / 850碗 / 700杯 / 500杯 數量，並以手寫簽名確認"
+        description="登記班末容器數量並保存手寫簽名"
       />
 
       {canSubmit ? (
@@ -53,14 +53,13 @@ export default async function ShiftClosingPage() {
               <TH>700杯</TH>
               <TH>500杯</TH>
               <TH>簽名人</TH>
-              <TH>辨識</TH>
               <TH>時間</TH>
             </tr>
           </THead>
           <tbody>
             {reports.length === 0 ? (
               <tr>
-                <td colSpan={10}>
+                <td colSpan={9}>
                   <EmptyState message="尚無班結紀錄。" />
                 </td>
               </tr>
@@ -82,7 +81,6 @@ export default async function ShiftClosingPage() {
                   <TD className="text-right">{r.qty700}</TD>
                   <TD className="text-right">{r.qty500}</TD>
                   <TD>{r.signerName ?? "—"}</TD>
-                  <TD className="text-xs text-gray-500">{r.recognizedText ?? "—"}</TD>
                   <TD className="text-xs text-gray-500">{formatDateTime(r.createdAt)}</TD>
                 </TR>
               ))

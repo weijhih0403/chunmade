@@ -32,16 +32,23 @@ export async function createShiftClosingAction(
       qty700: formData.get("qty700"),
       qty500: formData.get("qty500"),
       signatureData: formData.get("signatureData"),
-      recognizedText: (formData.get("recognizedText") as string) || undefined,
-      signerName: formData.get("signerName"),
+      signerName: formData.get("signerName") ?? "",
       matchedEmployeeId: formData.get("matchedEmployeeId") ?? "",
-      ocrConfidence: formData.get("ocrConfidence") ?? undefined,
     });
 
     assertStoreAccess(actor, data.storeId);
     const closingDate = data.closingDate
       ? startOfBusinessDay(new Date(data.closingDate))
       : startOfBusinessDay();
+
+    let signerName = data.signerName?.trim() || null;
+    if (data.matchedEmployeeId) {
+      const emp = await prisma.employee.findFirst({
+        where: { ...scope, id: data.matchedEmployeeId, deletedAt: null },
+        select: { name: true },
+      });
+      if (emp) signerName = emp.name;
+    }
 
     const report = await prisma.$transaction(async (tx) => {
       const reportNo = await nextDocumentNo(tx, scope.companyId, "SHIFT_CLOSING");
@@ -56,10 +63,10 @@ export async function createShiftClosingAction(
           qty700: data.qty700,
           qty500: data.qty500,
           signatureData: data.signatureData,
-          recognizedText: data.recognizedText || null,
-          signerName: data.signerName,
+          recognizedText: null,
+          signerName,
           matchedEmployeeId: data.matchedEmployeeId || null,
-          ocrConfidence: data.ocrConfidence ?? null,
+          ocrConfidence: null,
           createdBy: actor.id,
         },
       });
@@ -71,7 +78,7 @@ export async function createShiftClosingAction(
         entityId: created.id,
         after: {
           reportNo,
-          signerName: data.signerName,
+          signerName,
           qty520: data.qty520,
           qty850: data.qty850,
           qty700: data.qty700,

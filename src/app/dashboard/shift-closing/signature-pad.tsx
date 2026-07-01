@@ -163,9 +163,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(fu
       <div
         className={cn(
           "overflow-hidden bg-white",
-          fill
-            ? "h-full rounded-lg border border-gray-200"
-            : "rounded-xl border-2 border-dashed border-gray-300",
+          fill ? "h-full rounded-md border border-gray-200" : "rounded-xl border-2 border-dashed border-gray-300",
         )}
       >
         <canvas
