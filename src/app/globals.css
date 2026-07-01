@@ -7,6 +7,8 @@
   --primary-foreground: #ffffff;
   --border: #e2e5ea;
   --muted: #6b7280;
+  --motion-duration: 280ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @theme inline {
@@ -18,6 +20,84 @@
   --font-sans:
     "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",
     sans-serif;
+  --animate-fade-in: fade-in 0.25s var(--motion-ease) both;
+  --animate-fade-in-up: fade-in-up 0.35s var(--motion-ease) both;
+  --animate-page-in: page-in 0.3s var(--motion-ease) both;
+  --animate-drawer-in: drawer-in 0.3s var(--motion-ease) both;
+  --animate-drawer-out: drawer-out 0.25s var(--motion-ease) both;
+  --animate-backdrop-in: backdrop-in 0.25s ease both;
+  --animate-backdrop-out: backdrop-out 0.2s ease both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -29,4 +109,18 @@ body {
 
 * {
   border-color: var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

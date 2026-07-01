@@ -14,11 +14,15 @@ export function BrandMark({
   showSystemTitle?: boolean;
   className?: string;
 }) {
-  if (showSystemTitle && !collapsed && !centered) {
+  if (showSystemTitle && !centered) {
     return (
       <Link
         href="/dashboard"
-        className={cn("flex min-w-0 items-center gap-2", className)}
+        className={cn(
+          "flex min-w-0 items-center overflow-hidden transition-all duration-300 ease-in-out",
+          collapsed ? "justify-center" : "gap-2",
+          className,
+        )}
         title="淳手作管理系統"
       >
         <Image
@@ -26,10 +30,15 @@ export function BrandMark({
           alt="淳手作"
           width={36}
           height={36}
-          className="h-9 w-9 shrink-0 object-contain"
+          className="h-9 w-9 shrink-0 object-contain transition-transform duration-300 ease-in-out"
           priority
         />
-        <span className="truncate text-sm font-bold leading-snug text-amber-900">
+        <span
+          className={cn(
+            "truncate text-sm font-bold leading-snug text-amber-900 transition-all duration-300 ease-in-out",
+            collapsed ? "max-w-0 opacity-0" : "max-w-[9rem] opacity-100",
+          )}
+        >
           淳手作管理系統
         </span>
       </Link>
@@ -48,7 +57,7 @@ export function BrandMark({
         width={collapsed ? 36 : centered ? 200 : 160}
         height={collapsed ? 36 : centered ? 56 : 48}
         className={cn(
-          "object-contain",
+          "object-contain transition-all duration-300 ease-in-out",
           centered ? "mx-auto h-14 w-auto max-w-[14rem]" : "object-left",
           collapsed ? "h-9 w-9" : !centered && "h-10 w-auto max-w-[10.5rem]",
         )}

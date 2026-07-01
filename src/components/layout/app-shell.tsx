@@ -11,6 +11,8 @@ import { NavIcon, SidebarToggleIcon } from "./nav-icons";
 
 const COLLAPSE_KEY = "erp-sidebar-collapsed";
 
+type MobileDrawerState = "closed" | "open" | "closing";
+
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 }
@@ -34,45 +36,35 @@ function NavLinks({
   const pathname = usePathname();
   const groups = groupItems(items);
 
-  if (collapsed) {
-    return (
-      <nav className="flex flex-1 flex-col overflow-y-auto px-2 py-2">
-        {Object.entries(groups).map(([group, groupItems], groupIndex) => (
-          <div key={group} className={cn(groupIndex > 0 && "mt-1 border-t border-gray-100 pt-1")}>
-            {groupItems.map((item) => {
-              const active = isActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  title={item.label}
-                  aria-label={item.label}
-                  className={cn(
-                    "group relative mx-auto mb-0.5 flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
-                    active
-                      ? "bg-amber-100 text-amber-800 shadow-sm ring-1 ring-amber-200/80"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
-                  )}
-                >
-                  {active && (
-                    <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-amber-500" />
-                  )}
-                  <NavIcon href={item.href} />
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-    );
-  }
-
   return (
-    <nav className="flex-1 overflow-y-auto px-2 py-3">
-      {Object.entries(groups).map(([group, groupItems]) => (
-        <div key={group} className="mb-4">
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+    <nav
+      className={cn(
+        "flex-1 overflow-y-auto py-2 transition-all duration-300 ease-in-out",
+        collapsed ? "px-2" : "px-2 py-3",
+      )}
+    >
+      {Object.entries(groups).map(([group, groupItems], groupIndex) => (
+        <div
+          key={group}
+          className={cn(
+            "transition-all duration-300 ease-in-out",
+            collapsed ? "mb-1" : "mb-4",
+          )}
+        >
+          {groupIndex > 0 && (
+            <div
+              className={cn(
+                "mx-auto overflow-hidden transition-all duration-300 ease-in-out",
+                collapsed ? "my-1.5 h-px w-6 bg-gray-200 opacity-100" : "h-0 opacity-0",
+              )}
+            />
+          )}
+          <p
+            className={cn(
+              "overflow-hidden px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 transition-all duration-300 ease-in-out",
+              collapsed ? "max-h-0 pb-0 opacity-0" : "max-h-6 pb-1 opacity-100",
+            )}
+          >
             {group}
           </p>
           {groupItems.map((item) => {
@@ -82,15 +74,45 @@ function NavLinks({
                 key={item.href}
                 href={item.href}
                 onClick={onNavigate}
+                title={item.label}
+                aria-label={item.label}
                 className={cn(
-                  "mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                  "relative mb-0.5 flex items-center rounded-xl transition-all duration-200 ease-out",
+                  collapsed
+                    ? "mx-auto h-10 w-10 justify-center"
+                    : "gap-2.5 px-3 py-2 text-sm",
                   active
-                    ? "bg-amber-100 font-medium text-amber-900"
-                    : "text-gray-700 hover:bg-gray-100",
+                    ? collapsed
+                      ? "bg-amber-100 text-amber-800 shadow-sm ring-1 ring-amber-200/80"
+                      : "bg-amber-100 font-medium text-amber-900"
+                    : collapsed
+                      ? "text-gray-500 hover:scale-105 hover:bg-gray-100 hover:text-gray-800 active:scale-95"
+                      : "text-gray-700 hover:bg-gray-100",
                 )}
               >
-                <NavIcon href={item.href} className={cn(active ? "text-amber-700" : "text-gray-400")} />
-                {item.label}
+                {active && (
+                  <span
+                    className={cn(
+                      "absolute top-1/2 -translate-y-1/2 rounded-r-full bg-amber-500 transition-all duration-200",
+                      collapsed ? "-left-2 h-5 w-1" : "left-0 h-4 w-1",
+                    )}
+                  />
+                )}
+                <NavIcon
+                  href={item.href}
+                  className={cn(
+                    "shrink-0 transition-colors duration-200",
+                    !collapsed && (active ? "text-amber-700" : "text-gray-400"),
+                  )}
+                />
+                <span
+                  className={cn(
+                    "truncate transition-all duration-300 ease-in-out",
+                    collapsed ? "pointer-events-none max-w-0 opacity-0" : "max-w-full opacity-100",
+                  )}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -122,7 +144,7 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileDrawer, setMobileDrawer] = useState<MobileDrawerState>("closed");
 
   useEffect(() => {
     const saved = localStorage.getItem(COLLAPSE_KEY);
@@ -137,19 +159,29 @@ export function AppShell({
     });
   }
 
+  function openMobileDrawer() {
+    setMobileDrawer("open");
+  }
+
+  function closeMobileDrawer() {
+    setMobileDrawer("closing");
+    window.setTimeout(() => setMobileDrawer("closed"), 250);
+  }
+
   const pageTitle = currentPageLabel(pathname, items);
+  const mobileVisible = mobileDrawer !== "closed";
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <aside
         className={cn(
-          "hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-white transition-[width] duration-200 md:flex",
+          "hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out md:flex",
           collapsed ? "w-16" : "w-56",
         )}
       >
         <div
           className={cn(
-            "flex shrink-0 border-b border-gray-100",
+            "flex shrink-0 border-b border-gray-100 transition-all duration-300 ease-in-out",
             collapsed
               ? "flex-col items-center gap-2 px-2 py-3"
               : "h-14 items-center justify-between gap-2 px-3",
@@ -159,10 +191,7 @@ export function AppShell({
           <button
             type="button"
             onClick={toggleCollapsed}
-            className={cn(
-              "flex shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-800",
-              collapsed ? "h-8 w-8" : "h-8 w-8",
-            )}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-all duration-200 hover:scale-105 hover:bg-amber-50 hover:text-amber-800 active:scale-95"
             aria-label={collapsed ? "展開選單" : "收合選單"}
             title={collapsed ? "展開選單" : "收合選單"}
           >
@@ -172,43 +201,53 @@ export function AppShell({
         <NavLinks items={items} collapsed={collapsed} />
       </aside>
 
-      {mobileOpen && (
+      {mobileVisible && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "absolute inset-0 bg-black/40",
+              mobileDrawer === "open" ? "animate-backdrop-in" : "animate-backdrop-out",
+            )}
+            onClick={closeMobileDrawer}
             aria-hidden
           />
-          <aside className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-gray-200 bg-white shadow-xl">
+          <aside
+            className={cn(
+              "absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-gray-200 bg-white shadow-xl",
+              mobileDrawer === "open" ? "animate-drawer-in" : "animate-drawer-out",
+            )}
+          >
             <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
               <BrandMark showSystemTitle />
               <button
                 type="button"
-                onClick={() => setMobileOpen(false)}
-                className="rounded p-1 text-gray-500 hover:bg-gray-100"
+                onClick={closeMobileDrawer}
+                className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100"
                 aria-label="關閉選單"
               >
                 ✕
               </button>
             </div>
-            <NavLinks items={items} onNavigate={() => setMobileOpen(false)} />
+            <NavLinks items={items} onNavigate={closeMobileDrawer} />
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-5">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur-sm md:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
-              className="rounded p-1 text-gray-600 hover:bg-gray-100 md:hidden"
+              onClick={openMobileDrawer}
+              className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 md:hidden"
               aria-label="開啟選單"
             >
               <span className="text-lg leading-none">☰</span>
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900">{pageTitle}</p>
+              <p key={pathname} className="truncate text-sm font-medium text-gray-900 animate-fade-in">
+                {pageTitle}
+              </p>
               <p className="hidden truncate text-xs text-gray-400 sm:block">淳手作管理系統</p>
             </div>
           </div>
@@ -224,7 +263,9 @@ export function AppShell({
             </form>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-6">{children}</main>
+        <main key={pathname} className="flex-1 overflow-y-auto p-4 animate-page-in md:p-5 lg:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
