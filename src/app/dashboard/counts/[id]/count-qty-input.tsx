@@ -9,10 +9,12 @@ function isStepUnit(unit: string, unitCode?: string) {
     unit === "瓶" ||
     unit === "個" ||
     unit === "鍋" ||
+    unit === "箱" ||
     unitCode === "bag" ||
     unitCode === "bottle" ||
     unitCode === "pcs" ||
-    unitCode === "pot"
+    unitCode === "pot" ||
+    unitCode === "box"
   );
 }
 

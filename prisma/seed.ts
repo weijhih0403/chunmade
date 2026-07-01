@@ -249,6 +249,7 @@ async function main() {
   const uBag = await unit("bag", "包");
   const uBottle = await unit("bottle", "瓶");
   const uPot = await unit("pot", "鍋");
+  const uBox = await unit("box", "箱");
 
   await prisma.unitConversion.createMany({
     data: [
@@ -290,7 +291,7 @@ async function main() {
     { sku: "RAW-SUGAR", name: "砂糖", type: "RAW_MATERIAL", unitId: uBag.id, categoryId: catRaw.id, cost: 0.03, reorder: 10, safety: 3 },
     { sku: "RAW-WATER", name: "水", type: "RAW_MATERIAL", unitId: uMl.id, categoryId: catRaw.id, cost: 0.001, track: false },
     { sku: "PACK-CUP", name: "外帶杯", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 1.5, reorder: 500, safety: 200 },
-    { sku: "PACK-LID", name: "杯蓋", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 0.8, reorder: 500, safety: 200 },
+    { sku: "PACK-LID", name: "杯蓋", type: "RAW_MATERIAL", unitId: uBox.id, categoryId: catPack.id, cost: 0.8, reorder: 10, safety: 3 },
     { sku: "SEMI-SOYMILK", name: "豆漿(半成品)", type: "SEMI_FINISHED", unitId: uBottle.id, categoryId: catRaw.id, cost: 0, shelfLife: 2 },
     { sku: "SEMI-SYRUP", name: "糖水(半成品)", type: "SEMI_FINISHED", unitId: uMl.id, categoryId: catRaw.id, cost: 0, shelfLife: 7 },
     { sku: "FG-TOFU", name: "傳統豆花", type: "FINISHED_GOOD", unitId: uCup.id, categoryId: catDessert.id, price: 45, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
@@ -417,7 +418,7 @@ async function main() {
   await setInitialStock("RAW-SOYBEAN", wh1.id, 0, 0.08);
   await setInitialStock("RAW-SUGAR", wh1.id, 0, 0.03);
   await setInitialStock("PACK-CUP", wh1.id, 1000, 1.5);
-  await setInitialStock("PACK-LID", wh1.id, 1000, 0.8);
+  await setInitialStock("PACK-LID", wh1.id, 0, 0.8);
   // 故意讓杯子接近補貨點以展示低庫存提醒
   await setInitialStock("FG-TOFU", wh1.id, 8, 18);
 
