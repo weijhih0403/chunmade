@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
-import { listEmployees, listDepartments } from "@/modules/hr/service";
+import { listEmployees, listStores } from "@/modules/hr/service";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
@@ -17,9 +17,9 @@ export default async function EmployeesPage({
 }) {
   const params = await searchParams;
   const actor = await requirePermission("employee.read");
-  const [employees, departments] = await Promise.all([
+  const [employees, stores] = await Promise.all([
     listEmployees(actor),
-    listDepartments(actor),
+    listStores(actor),
   ]);
   const canManage = actor.permissions.has("employee.manage");
 
@@ -38,14 +38,14 @@ export default async function EmployeesPage({
 
   return (
     <div className="space-y-4">
-      <PageHeader title="員工" description="員工基本資料與部門" />
+      <PageHeader title="員工" description="員工基本資料與所屬門市" />
 
       {deleteMessage && <SuccessBanner message={deleteMessage} />}
 
       {canManage && (
         <Card>
           <CardContent>
-            <EmployeeForm departments={departments.map((d) => ({ id: d.id, name: d.name }))} />
+            <EmployeeForm stores={stores.map((s) => ({ id: s.id, name: s.name }))} />
           </CardContent>
         </Card>
       )}
@@ -58,7 +58,7 @@ export default async function EmployeesPage({
             <tr>
               <TH>編號</TH>
               <TH>姓名</TH>
-              <TH>部門</TH>
+              <TH>門市</TH>
               <TH>電話</TH>
               <TH>狀態</TH>
               {canManage && <TH>操作</TH>}
@@ -69,7 +69,7 @@ export default async function EmployeesPage({
               <TR key={e.id}>
                 <TD className="font-mono text-xs">{e.employeeNo}</TD>
                 <TD className="font-medium text-gray-900">{e.name}</TD>
-                <TD>{e.department?.name ?? "—"}</TD>
+                <TD>{e.storeName ?? "—"}</TD>
                 <TD>{e.phone ?? "—"}</TD>
                 <TD>{e.isActive ? <Badge color="green">在職</Badge> : <Badge>停用</Badge>}</TD>
                 {canManage && (

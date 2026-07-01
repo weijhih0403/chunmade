@@ -96,9 +96,22 @@ enum TransferStatus {
   CANCELLED
 }
 
+enum TransferSettlementStatus {
+  PENDING
+  COLLECTED
+  PAID
+  WAIVED
+}
+
 enum StockCountStatus {
   DRAFT
   COUNTING
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryNoteStatus {
+  IN_PROGRESS
   COMPLETED
   CANCELLED
 }
@@ -242,8 +255,10 @@ model Store {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  company    Company     @relation(fields: [companyId], references: [id])
+  company    Company        @relation(fields: [companyId], references: [id])
   warehouses Warehouse[]
+  deliveryNotes DeliveryNote[]
+  shiftClosingReports ShiftClosingReport[]
 
   @@unique([companyId, code])
   @@index([companyId])
@@ -746,6 +761,7 @@ model Item {
   stockLots      StockLot[]
   stockBalances  StockBalance[]
   stockMovements StockMovement[]
+  deliveryNoteItems DeliveryNoteItem[]
 
   @@unique([companyId, sku])
   @@index([companyId])
@@ -1104,10 +1120,18 @@ model StockTransfer {
   completedAt     DateTime?
   deletedAt       DateTime?
 
+  settlementAmount   Decimal?                  @db.Decimal(18, 4)
+  collectFromStoreId String?
+  payToStoreId       String?
+  settlementStatus   TransferSettlementStatus  @default(PENDING)
+  settlementNote     String?
+  settledAt          DateTime?
+
   items StockTransferItem[]
 
   @@unique([companyId, transferNo])
   @@index([companyId])
+  @@index([completedAt])
 }
 
 model StockTransferItem {
@@ -1116,10 +1140,78 @@ model StockTransferItem {
   itemId     String
   lotId      String?
   quantity   Decimal  @db.Decimal(18, 4)
+  unitCost   Decimal  @default(0) @db.Decimal(18, 4)
 
   transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
 
   @@index([transferId])
+}
+
+model DeliveryNote {
+  id           String             @id @default(cuid())
+  companyId    String
+  storeId      String
+  deliveryNo   String
+  deliveryDate DateTime           @db.Date
+  status       DeliveryNoteStatus @default(IN_PROGRESS)
+  note         String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  createdBy    String?
+  completedAt  DateTime?
+  deletedAt    DateTime?
+
+  store Store              @relation(fields: [storeId], references: [id])
+  items DeliveryNoteItem[]
+
+  @@unique([companyId, deliveryNo])
+  @@unique([companyId, storeId, deliveryDate])
+  @@index([companyId])
+  @@index([storeId])
+}
+
+model DeliveryNoteItem {
+  id          String    @id @default(cuid())
+  deliveryId  String
+  itemId      String
+  quantity    Decimal   @default(1) @db.Decimal(18, 4)
+  note        String?
+  sortOrder   Int       @default(0)
+  isDelivered Boolean   @default(false)
+  deliveredAt DateTime?
+  deliveredBy String?
+
+  delivery DeliveryNote @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  item     Item         @relation(fields: [itemId], references: [id])
+
+  @@index([deliveryId])
+}
+
+model ShiftClosingReport {
+  id                String    @id @default(cuid())
+  companyId         String
+  storeId           String
+  reportNo          String
+  closingDate       DateTime  @db.Date
+  qty520            Int       @default(0)
+  qty850            Int       @default(0)
+  qty700            Int       @default(0)
+  qty500            Int       @default(0)
+  signatureData     String?
+  recognizedText    String?
+  signerName        String?
+  matchedEmployeeId String?
+  ocrConfidence     Float?
+  createdBy         String?
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
+
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@unique([companyId, reportNo])
+  @@index([companyId])
+  @@index([storeId])
+  @@index([closingDate])
 }
 
 model StockCount {

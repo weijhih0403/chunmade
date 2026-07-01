@@ -4,10 +4,29 @@ import { type Actor, companyScope } from "@/lib/permissions";
 
 export async function listEmployees(actor: Actor) {
   const scope = companyScope(actor);
-  return prisma.employee.findMany({
-    where: { ...scope, deletedAt: null },
-    include: { department: true, position: true, employmentType: true },
-    orderBy: { employeeNo: "asc" },
+  const [employees, stores] = await Promise.all([
+    prisma.employee.findMany({
+      where: { ...scope, deletedAt: null },
+      include: { position: true, employmentType: true },
+      orderBy: { employeeNo: "asc" },
+    }),
+    prisma.store.findMany({
+      where: { ...scope, deletedAt: null },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const storeName = new Map(stores.map((s) => [s.id, s.name]));
+  return employees.map((e) => ({
+    ...e,
+    storeName: e.primaryStoreId ? (storeName.get(e.primaryStoreId) ?? null) : null,
+  }));
+}
+
+export async function listStores(actor: Actor) {
+  const scope = companyScope(actor);
+  return prisma.store.findMany({
+    where: { ...scope, deletedAt: null, isActive: true },
+    orderBy: { code: "asc" },
   });
 }
 

@@ -34,6 +34,16 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
     </>
   ),
+  "/dashboard/shift-closing": (
+    <>
+      <path d="M8 4h8v16H8z" />
+      <path d="M10 8h4" />
+      <path d="M10 12h4" />
+      <path d="M10 16h3" />
+      <path d="M6 6h2" />
+      <path d="M6 10h2" />
+    </>
+  ),
   "/dashboard/items": (
     <>
       <path d="M21 8v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8" />
@@ -102,6 +112,15 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6 6 5 3H2" />
       <circle cx="9" cy="20" r="1" />
       <circle cx="18" cy="20" r="1" />
+    </>
+  ),
+  "/dashboard/deliveries": (
+    <>
+      <path d="M3 7h11v10H3z" />
+      <path d="M14 10h4l3 3v4h-7V10Z" />
+      <circle cx="7.5" cy="17.5" r="1.5" />
+      <circle cx="17.5" cy="17.5" r="1.5" />
+      <path d="M3 11h8" />
     </>
   ),
   "/dashboard/recipes": (

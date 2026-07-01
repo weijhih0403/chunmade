@@ -12,6 +12,8 @@ export const DOC_PREFIX = {
   STOCK_COUNT: "SC",
   WASTE: "WS",
   REFUND: "RF",
+  DELIVERY_NOTE: "DN",
+  SHIFT_CLOSING: "BC",
 } as const;
 
 export type DocType = keyof typeof DOC_PREFIX;

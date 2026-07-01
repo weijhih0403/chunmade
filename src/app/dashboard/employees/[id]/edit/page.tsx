@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
-import { getEmployee, listDepartments, listShifts } from "@/modules/hr/service";
+import { getEmployee, listShifts, listStores } from "@/modules/hr/service";
 import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +16,9 @@ export default async function EditEmployeePage({
 }) {
   const { id } = await params;
   const actor = await requirePermission("employee.manage");
-  const [employee, departments, shifts] = await Promise.all([
+  const [employee, stores, shifts] = await Promise.all([
     getEmployee(actor, id),
-    listDepartments(actor),
+    listStores(actor),
     listShifts(actor),
   ]);
   if (!employee) notFound();
@@ -30,13 +30,13 @@ export default async function EditEmployeePage({
       <Card>
         <CardContent>
           <EmployeeForm
-            departments={departments.map((d) => ({ id: d.id, name: d.name }))}
+            stores={stores.map((s) => ({ id: s.id, name: s.name }))}
             defaults={{
               id: employee.id,
               employeeNo: employee.employeeNo,
               name: employee.name,
               phone: employee.phone,
-              departmentId: employee.departmentId,
+              primaryStoreId: employee.primaryStoreId,
               hourlyRate: employee.hourlyRate?.toString() ?? "",
               hireDate: employee.hireDate?.toISOString().slice(0, 10) ?? "",
               minMonthlyShifts: employee.minMonthlyShifts,

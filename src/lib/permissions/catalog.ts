@@ -46,6 +46,11 @@ export const PERMISSION_DEFS = [
   { key: "purchase.approve", module: "purchase", label: "審核採購單" },
   { key: "purchase.receive", module: "purchase", label: "驗收入庫" },
 
+  // 送貨
+  { key: "delivery.read", module: "delivery", label: "查看送貨單" },
+  { key: "delivery.manage", module: "delivery", label: "建立/編輯送貨單" },
+  { key: "delivery.confirm", module: "delivery", label: "標記送貨狀態" },
+
   // 生產
   { key: "production.read", module: "production", label: "查看生產" },
   { key: "production.manage", module: "production", label: "建立/編輯生產單" },
@@ -92,6 +97,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[] | "*"> = {
     "catalog.manage",
     "inventory.read",
     "purchase.read",
+    "delivery.read",
     "production.read",
     "sales.read",
     "customer.read",
@@ -118,6 +124,9 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[] | "*"> = {
     "purchase.manage",
     "purchase.approve",
     "purchase.receive",
+    "delivery.read",
+    "delivery.manage",
+    "delivery.confirm",
     "production.read",
     "production.manage",
     "production.execute",
@@ -154,6 +163,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[] | "*"> = {
     "inventory.waste",
     "purchase.read",
     "purchase.receive",
+    "delivery.read",
+    "delivery.confirm",
     "attendance.clock",
     "schedule.read",
     "leave.request",

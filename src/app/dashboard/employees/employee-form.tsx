@@ -13,7 +13,7 @@ export type EmployeeDefaults = {
   employeeNo: string;
   name: string;
   phone?: string | null;
-  departmentId?: string | null;
+  primaryStoreId?: string | null;
   hourlyRate?: string | null;
   hireDate?: string | null;
   minMonthlyShifts?: number | null;
@@ -22,10 +22,10 @@ export type EmployeeDefaults = {
 };
 
 export function EmployeeForm({
-  departments,
+  stores,
   defaults,
 }: {
-  departments: Opt[];
+  stores: Opt[];
   defaults?: EmployeeDefaults;
 }) {
   const isEdit = Boolean(defaults?.id);
@@ -56,16 +56,16 @@ export function EmployeeForm({
         <Input name="phone" defaultValue={defaults?.phone ?? ""} className="w-full sm:w-32" />
       </div>
       <div className="w-full sm:w-auto">
-        <label className="mb-1 block text-xs text-gray-500">部門</label>
+        <label className="mb-1 block text-xs text-gray-500">門市</label>
         <Select
-          name="departmentId"
-          defaultValue={defaults?.departmentId ?? ""}
-          className="w-full sm:w-32"
+          name="primaryStoreId"
+          defaultValue={defaults?.primaryStoreId ?? ""}
+          className="w-full sm:w-36"
         >
           <option value="">（無）</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
+          {stores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
             </option>
           ))}
         </Select>

@@ -11,6 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "儀表板", href: "/dashboard", group: "總覽" },
 
   { label: "POS 點餐記錄", href: "/dashboard/pos-orders", permission: "sales.read", group: "營運" },
+  { label: "班結表", href: "/dashboard/shift-closing", permission: "sales.read", group: "營運" },
 
   { label: "商品", href: "/dashboard/items", permission: "catalog.read", group: "基礎資料" },
   { label: "原物料", href: "/dashboard/materials", permission: "catalog.read", group: "基礎資料" },
@@ -23,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "盤點", href: "/dashboard/counts", permission: "inventory.count", group: "庫存" },
 
   { label: "採購單", href: "/dashboard/purchases", permission: "purchase.read", group: "採購" },
+  { label: "送貨單", href: "/dashboard/deliveries", permission: "delivery.read", group: "採購" },
 
   { label: "配方", href: "/dashboard/recipes", permission: "production.read", group: "生產" },
   { label: "生產單", href: "/dashboard/production", permission: "production.read", group: "生產" },

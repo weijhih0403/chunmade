@@ -146,6 +146,19 @@ export async function transferAction(_prev: FormState, formData: FormData): Prom
 
     await prisma.$transaction(async (tx) => {
       const transferNo = await nextDocumentNo(tx, scope.companyId, "STOCK_TRANSFER");
+
+      const [fromWh, toWh] = await Promise.all([
+        tx.warehouse.findFirst({
+          where: { ...scope, id: data.fromWarehouseId },
+          include: { store: { select: { id: true } } },
+        }),
+        tx.warehouse.findFirst({
+          where: { ...scope, id: data.toWarehouseId },
+          include: { store: { select: { id: true } } },
+        }),
+      ]);
+      if (!fromWh || !toWh) throw new BusinessRuleError("倉庫不存在");
+
       const transfer = await tx.stockTransfer.create({
         data: {
           companyId: scope.companyId,
@@ -170,6 +183,41 @@ export async function transferAction(_prev: FormState, formData: FormData): Prom
         sourceNo: transferNo,
         operatorId: actor.id,
       });
+
+      const unitCost = out.avgCost;
+      const settlementAmount = unitCost.mul(data.quantity);
+      const fromStoreId = fromWh.store?.id ?? null;
+      const toStoreId = toWh.store?.id ?? null;
+
+      let collectFromStoreId: string | null = null;
+      let payToStoreId: string | null = null;
+      let settlementStatus: "PENDING" | "WAIVED" = "WAIVED";
+
+      if (fromStoreId && toStoreId && fromStoreId !== toStoreId && settlementAmount.greaterThan(0)) {
+        collectFromStoreId = toStoreId;
+        payToStoreId = fromStoreId;
+        settlementStatus = "PENDING";
+      }
+
+      await tx.stockTransferItem.updateMany({
+        where: { transferId: transfer.id },
+        data: { unitCost } as { unitCost: typeof unitCost },
+      });
+      await tx.stockTransfer.update({
+        where: { id: transfer.id },
+        data: {
+          settlementAmount,
+          collectFromStoreId,
+          payToStoreId,
+          settlementStatus,
+        } as {
+          settlementAmount: typeof settlementAmount;
+          collectFromStoreId: string | null;
+          payToStoreId: string | null;
+          settlementStatus: typeof settlementStatus;
+        },
+      });
+
       await applyStockMovement(tx, {
         companyId: scope.companyId,
         warehouseId: data.toWarehouseId,
@@ -195,6 +243,63 @@ export async function transferAction(_prev: FormState, formData: FormData): Prom
     revalidatePath("/dashboard/transfers");
     revalidatePath("/dashboard/inventory");
     return { ok: true, message: "調撥完成" };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
+const settlementSchema = z.object({
+  transferId: z.string().min(1),
+  settlementStatus: z.enum(["PENDING", "COLLECTED", "PAID", "WAIVED"]),
+  collectFromStoreId: z.string().optional().or(z.literal("")),
+  payToStoreId: z.string().optional().or(z.literal("")),
+  settlementNote: z.string().optional(),
+});
+
+export async function updateTransferSettlementAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requirePermission("inventory.transfer");
+    const scope = companyScope(actor);
+    const data = settlementSchema.parse({
+      transferId: formData.get("transferId"),
+      settlementStatus: formData.get("settlementStatus"),
+      collectFromStoreId: formData.get("collectFromStoreId") ?? "",
+      payToStoreId: formData.get("payToStoreId") ?? "",
+      settlementNote: (formData.get("settlementNote") as string) || undefined,
+    });
+
+    const transfer = await prisma.stockTransfer.findFirst({
+      where: { ...scope, id: data.transferId, deletedAt: null },
+    });
+    if (!transfer) throw new BusinessRuleError("找不到調撥單");
+
+    const settled =
+      data.settlementStatus === "COLLECTED" ||
+      data.settlementStatus === "PAID" ||
+      data.settlementStatus === "WAIVED";
+
+    await prisma.stockTransfer.update({
+      where: { id: data.transferId },
+      data: {
+        settlementStatus: data.settlementStatus,
+        collectFromStoreId: data.collectFromStoreId || null,
+        payToStoreId: data.payToStoreId || null,
+        settlementNote: data.settlementNote || null,
+        settledAt: settled ? new Date() : null,
+      } as {
+        settlementStatus: typeof data.settlementStatus;
+        collectFromStoreId: string | null;
+        payToStoreId: string | null;
+        settlementNote: string | null;
+        settledAt: Date | null;
+      },
+    });
+
+    revalidatePath("/dashboard/transfers");
+    return { ok: true, message: "貨款狀態已更新" };
   } catch (err) {
     return toFormError(err);
   }
