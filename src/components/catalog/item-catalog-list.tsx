@@ -64,6 +64,7 @@ function MobileCard({
   canManage: boolean;
   from?: "materials";
 }) {
+  const isMaterial = from === "materials";
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
@@ -82,14 +83,18 @@ function MobileCard({
           <dt className="text-xs text-gray-400">單位</dt>
           <dd className="text-gray-700">{item.baseUnit.name}</dd>
         </div>
-        <div>
-          <dt className="text-xs text-gray-400">售價</dt>
-          <dd className="font-medium text-gray-900">{formatTWD(item.price)}</dd>
+        <div className={isMaterial ? "col-span-2" : undefined}>
+          <dt className="text-xs text-gray-400">{isMaterial ? "標準成本" : "售價"}</dt>
+          <dd className="font-medium text-gray-900">
+            {formatTWD(isMaterial ? item.standardCost : item.price)}
+          </dd>
         </div>
-        <div>
-          <dt className="text-xs text-gray-400">標準成本</dt>
-          <dd className="text-gray-700">{formatTWD(item.standardCost)}</dd>
-        </div>
+        {!isMaterial && (
+          <div>
+            <dt className="text-xs text-gray-400">標準成本</dt>
+            <dd className="text-gray-700">{formatTWD(item.standardCost)}</dd>
+          </div>
+        )}
         <div>
           <dt className="text-xs text-gray-400">庫存</dt>
           <dd>
@@ -115,6 +120,7 @@ export function ItemCatalogList({
   canManage: boolean;
   from?: "materials";
 }) {
+  const isMaterial = from === "materials";
   return (
     <>
       <div className="space-y-3 md:hidden">
@@ -128,12 +134,12 @@ export function ItemCatalogList({
           <THead>
             <tr>
               <TH className="w-[14%]">SKU</TH>
-              <TH className="w-[18%]">名稱</TH>
+              <TH className="w-[22%]">名稱</TH>
               <TH className="w-[10%]">類型</TH>
               <TH className="w-[12%]">分類</TH>
-              <TH className="w-[6%]">單位</TH>
-              <TH className="w-[8%] text-right">售價</TH>
-              <TH className="w-[8%] text-right">標準成本</TH>
+              <TH className="w-[8%]">單位</TH>
+              {!isMaterial && <TH className="w-[10%] text-right">售價</TH>}
+              <TH className="w-[10%] text-right">標準成本</TH>
               <TH className="w-[8%]">庫管</TH>
               {canManage && <TH className="w-[16%]">操作</TH>}
             </tr>
@@ -152,8 +158,12 @@ export function ItemCatalogList({
                 </TD>
                 <TD className="truncate">{it.category?.name ?? "—"}</TD>
                 <TD className="whitespace-nowrap">{it.baseUnit.name}</TD>
-                <TD className="whitespace-nowrap text-right">{formatTWD(it.price)}</TD>
-                <TD className="whitespace-nowrap text-right">{formatTWD(it.standardCost)}</TD>
+                {!isMaterial && (
+                  <TD className="whitespace-nowrap text-right">{formatTWD(it.price)}</TD>
+                )}
+                <TD className="whitespace-nowrap text-right font-medium text-gray-900">
+                  {formatTWD(it.standardCost)}
+                </TD>
                 <TD>
                   {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
                 </TD>

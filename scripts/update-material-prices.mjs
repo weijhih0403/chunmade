@@ -1,13 +1,13 @@
 /**
- * 批次更新原物料售價（Item.price）
+ * 批次更新原物料標準成本（Item.standardCost）
  * 用法：node scripts/update-material-prices.mjs
  */
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-/** 名稱 → 售價（空白價格不列入，不重複名稱以首次為準） */
-const PRICES = {
+/** 名稱 → 標準成本（進貨成本） */
+const COSTS = {
   芋圓: 300,
   地瓜圓: 275,
   紫地瓜: 275,
@@ -103,7 +103,7 @@ async function main() {
       deletedAt: null,
       type: { in: ["RAW_MATERIAL", "SEMI_FINISHED"] },
     },
-    select: { id: true, sku: true, name: true, price: true },
+    select: { id: true, sku: true, name: true, price: true, standardCost: true },
   });
 
   let updated = 0;
@@ -111,32 +111,42 @@ async function main() {
   const notFound = [];
 
   for (const item of items) {
-    const price = PRICES[item.name];
-    if (price === undefined) {
+    const cost = COSTS[item.name];
+    if (cost === undefined) {
       notInList.push(item.name);
       continue;
     }
-    const current = Number(item.price);
-    if (current === price) continue;
+    const currentCost = Number(item.standardCost);
+    const currentPrice = Number(item.price);
+    const needCost = currentCost !== cost;
+    const needResetPrice = currentPrice !== 0;
+    if (!needCost && !needResetPrice) continue;
+
     await prisma.item.update({
       where: { id: item.id },
-      data: { price },
+      data: {
+        standardCost: cost,
+        price: 0,
+      },
     });
-    console.log(`✓ ${item.sku} ${item.name}：${current} → ${price}`);
+    console.log(
+      `✓ ${item.sku} ${item.name}：成本 ${currentCost} → ${cost}` +
+        (needResetPrice ? `，售價 ${currentPrice} → 0` : ""),
+    );
     updated++;
   }
 
-  for (const name of Object.keys(PRICES)) {
+  for (const name of Object.keys(COSTS)) {
     if (!items.some((it) => it.name === name)) notFound.push(name);
   }
 
-  console.log(`\n完成：更新 ${updated} 筆`);
+  console.log(`\n完成：更新 ${updated} 筆標準成本（原物料售價已歸零）`);
   if (notFound.length) {
     console.log(`\n清單中有但資料庫無此原物料（${notFound.length}）：`);
     console.log(notFound.join("、"));
   }
   if (notInList.length) {
-    console.log(`\n資料庫有但未提供售價（${notInList.length}，維持原價）：`);
+    console.log(`\n資料庫有但未提供成本（${notInList.length}，維持原值）：`);
     console.log(notInList.join("、"));
   }
 }
