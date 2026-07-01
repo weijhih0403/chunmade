@@ -15,7 +15,15 @@ export async function getEmployee(actor: Actor, id: string) {
   const scope = companyScope(actor);
   return prisma.employee.findFirst({
     where: { ...scope, id, deletedAt: null },
-    include: { department: true },
+    include: { department: true, preferences: true },
+  });
+}
+
+export async function listEmployeePreferences(actor: Actor, employeeId: string) {
+  const scope = companyScope(actor);
+  return prisma.employeePreference.findMany({
+    where: { ...scope, employeeId },
+    orderBy: [{ weekday: "asc" }, { shiftId: "asc" }],
   });
 }
 

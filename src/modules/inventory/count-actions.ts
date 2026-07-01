@@ -50,7 +50,7 @@ export async function createCountAction(formData: FormData) {
             return {
               itemId: it.id,
               systemQty: sys,
-              countedQty: sys,
+              countedQty: ZERO,
               differenceQty: ZERO,
             };
           }),
@@ -117,7 +117,9 @@ export async function completeCountAction(formData: FormData) {
   await prisma.$transaction(async (tx) => {
     for (const ci of count.items) {
       const countedRaw = formData.get(`counted_${ci.itemId}`);
-      const counted = toDecimal(countedRaw != null && countedRaw !== "" ? String(countedRaw) : ci.systemQty);
+      const counted = toDecimal(
+        countedRaw != null && countedRaw !== "" ? String(countedRaw) : "0",
+      );
       const diff = sub(counted, ci.systemQty);
 
       await tx.stockCountItem.update({

@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requirePermission, companyScope, assertStoreAccess } from "@/lib/permissions";
+import { requirePermission, requireAnyPermission, companyScope, assertStoreAccess } from "@/lib/permissions";
 import { writeAudit } from "@/lib/audit";
 import { BusinessRuleError, NotFoundError, ConflictError } from "@/lib/errors";
 import { type FormState, toFormError } from "@/lib/forms";
@@ -89,6 +90,99 @@ export async function updateEmployeeAction(
   } catch (err) {
     return toFormError(err);
   }
+}
+
+/** 刪除員工：軟刪除，可選將未來班表轉給其他員工 */
+export async function deleteEmployeeAction(formData: FormData) {
+  const actor = await requirePermission("employee.manage");
+  const scope = companyScope(actor);
+  const id = String(formData.get("employeeId") ?? "");
+  const replaceId = String(formData.get("replaceWithEmployeeId") ?? "").trim() || null;
+
+  const employee = await prisma.employee.findFirst({
+    where: { ...scope, id, deletedAt: null },
+  });
+  if (!employee) throw new NotFoundError("找不到員工");
+  if (replaceId === id) throw new BusinessRuleError("替換員工不可與刪除對象相同");
+
+  let replacement: { id: string; name: string } | null = null;
+  if (replaceId) {
+    replacement = await prisma.employee.findFirst({
+      where: { ...scope, id: replaceId, deletedAt: null, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (!replacement) throw new NotFoundError("找不到替換員工");
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let transferred = 0;
+  let skipped = 0;
+
+  await prisma.$transaction(async (tx) => {
+    if (replacement) {
+      const futureSchedules = await tx.schedule.findMany({
+        where: {
+          companyId: scope.companyId,
+          employeeId: id,
+          deletedAt: null,
+          workDate: { gte: today },
+        },
+        orderBy: { workDate: "asc" },
+      });
+
+      for (const sched of futureSchedules) {
+        const conflict = await tx.schedule.findFirst({
+          where: {
+            employeeId: replacement.id,
+            workDate: sched.workDate,
+            deletedAt: null,
+          },
+        });
+        if (conflict) {
+          skipped++;
+          continue;
+        }
+
+        const transferNote = `自 ${employee.name} 轉移`;
+        await tx.schedule.update({
+          where: { id: sched.id },
+          data: {
+            employeeId: replacement.id,
+            note: sched.note ? `${sched.note}; ${transferNote}` : transferNote,
+          },
+        });
+        transferred++;
+      }
+    }
+
+    await tx.employee.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false, userId: null },
+    });
+
+    await writeAudit(tx, {
+      companyId: scope.companyId,
+      userId: actor.id,
+      action: "DELETE",
+      entityType: "Employee",
+      entityId: id,
+      before: { employeeNo: employee.employeeNo, name: employee.name },
+      after: replacement
+        ? { replacedBy: replacement.id, transferred, skipped }
+        : undefined,
+    });
+  });
+
+  revalidatePath("/dashboard/employees");
+  revalidatePath("/dashboard/schedule");
+  if (replacement) {
+    redirect(
+      `/dashboard/employees?deleted=1&transferred=${transferred}&skipped=${skipped}`,
+    );
+  }
+  redirect("/dashboard/employees?deleted=1");
 }
 
 const shiftSchema = z.object({
@@ -346,4 +440,169 @@ export async function approveLeaveAction(formData: FormData) {
     });
   });
   revalidatePath("/dashboard/attendance");
+}
+
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+
+/** 儲存員工每週可排班偏好（覆寫） */
+export async function saveEmployeePreferencesAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requireAnyPermission(["employee.manage", "schedule.manage"]);
+    const scope = companyScope(actor);
+    const employeeId = String(formData.get("employeeId") ?? "");
+    const employee = await prisma.employee.findFirst({
+      where: { ...scope, id: employeeId, deletedAt: null },
+    });
+    if (!employee) throw new NotFoundError("找不到員工");
+
+    const rows: Array<{
+      weekday: number;
+      shiftId: string | null;
+      available: boolean;
+      preference: number;
+    }> = [];
+
+    for (const wd of WEEKDAYS) {
+      const available = formData.get(`pref_${wd}_available`) === "on";
+      const shiftId = String(formData.get(`pref_${wd}_shift`) ?? "").trim() || null;
+      const preference = Number(formData.get(`pref_${wd}_score`) ?? 0);
+      rows.push({
+        weekday: wd,
+        shiftId,
+        available,
+        preference: Number.isFinite(preference) ? Math.max(0, Math.min(10, preference)) : 0,
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.employeePreference.deleteMany({ where: { companyId: scope.companyId, employeeId } });
+      await tx.employeePreference.createMany({
+        data: rows.map((r) => ({
+          companyId: scope.companyId,
+          employeeId,
+          weekday: r.weekday,
+          shiftId: r.shiftId,
+          available: r.available,
+          preference: r.preference,
+        })),
+      });
+    });
+
+    revalidatePath(`/dashboard/employees/${employeeId}/edit`);
+    revalidatePath("/dashboard/schedule");
+    return { ok: true, message: "可排班偏好已儲存" };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
+/** 自動排班：依偏好、請假、門市產生未來 N 天班表 */
+export async function autoGenerateScheduleAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requirePermission("schedule.manage");
+    const scope = companyScope(actor);
+    const storeId = String(formData.get("storeId") ?? "");
+    const days = Math.min(28, Math.max(1, Number(formData.get("days") ?? 14)));
+    const minPerShift = Math.min(5, Math.max(1, Number(formData.get("minPerShift") ?? 1)));
+    const clearExisting = formData.get("clearExisting") === "on";
+
+    if (!storeId) throw new BusinessRuleError("請選擇門市");
+    assertStoreAccess(actor, storeId);
+
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate.getTime() + days * 86400000);
+
+    const [employees, shifts, preferences, existing, leaves] = await Promise.all([
+      prisma.employee.findMany({ where: { ...scope, deletedAt: null } }),
+      prisma.shift.findMany({ where: { ...scope, deletedAt: null, isActive: true } }),
+      prisma.employeePreference.findMany({ where: { companyId: scope.companyId } }),
+      prisma.schedule.findMany({
+        where: {
+          ...scope,
+          storeId,
+          deletedAt: null,
+          workDate: { gte: startDate, lte: endDate },
+        },
+      }),
+      prisma.leaveRequest.findMany({
+        where: {
+          companyId: scope.companyId,
+          status: "APPROVED",
+          startAt: { lte: endDate },
+          endAt: { gte: startDate },
+        },
+      }),
+    ]);
+
+    const { generateAutoSchedulePlan } = await import("./auto-schedule");
+    const plan = generateAutoSchedulePlan({
+      employees,
+      shifts,
+      preferences,
+      existing: clearExisting ? [] : existing,
+      leaves,
+      storeId,
+      startDate,
+      days,
+      minPerShift,
+    });
+
+    if (plan.length === 0) {
+      return {
+        ok: false,
+        message: "無法產生排班：請確認員工可排班偏好、班別與人力設定。",
+      };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (clearExisting) {
+        await tx.schedule.updateMany({
+          where: {
+            companyId: scope.companyId,
+            storeId,
+            deletedAt: null,
+            workDate: { gte: startDate, lte: endDate },
+          },
+          data: { deletedAt: new Date() },
+        });
+      }
+
+      for (const row of plan) {
+        await tx.schedule.create({
+          data: {
+            companyId: scope.companyId,
+            storeId: row.storeId,
+            employeeId: row.employeeId,
+            shiftId: row.shiftId,
+            workDate: row.workDate,
+            startAt: row.startAt,
+            endAt: row.endAt,
+            note: "自動排班",
+            createdBy: actor.id,
+          },
+        });
+      }
+
+      await writeAudit(tx, {
+        companyId: scope.companyId,
+        userId: actor.id,
+        action: "AUTO_SCHEDULE",
+        entityType: "Schedule",
+        entityId: storeId,
+        after: { count: plan.length, days, minPerShift, clearExisting },
+      });
+    });
+
+    revalidatePath("/dashboard/schedule");
+    return { ok: true, message: `已自動產生 ${plan.length} 筆排班（未來 ${days} 天）` };
+  } catch (err) {
+    return toFormError(err);
+  }
 }

@@ -6,6 +6,7 @@ import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Table, THead, TH, TR, TD, Badge } from "@/components/ui/table";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { CountQtyInput } from "./count-qty-input";
 
 export const dynamic = "force-dynamic";
 
@@ -53,12 +54,11 @@ export default async function CountDetailPage({
                 <TD className="text-right">{r.systemQty.toString()}</TD>
                 <TD className="text-right">
                   {editable ? (
-                    <input
+                    <CountQtyInput
                       name={`counted_${r.itemId}`}
-                      type="number"
-                      step="0.0001"
-                      defaultValue={r.countedQty.toString()}
-                      className="h-9 w-28 rounded border border-gray-300 px-2 text-right"
+                      unit={r.unit}
+                      unitCode={r.unitCode}
+                      defaultValue="0"
                     />
                   ) : (
                     r.countedQty.toString()

@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
 import { formatDate, formatDateTime } from "@/lib/dates";
-import { ShiftForm, ScheduleForm } from "./schedule-forms";
+import { ShiftForm, ScheduleForm, AutoScheduleForm } from "./schedule-forms";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +22,18 @@ export default async function SchedulePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="排班" description="未來兩週班表" />
+      <PageHeader title="排班" description="未來兩週班表；可手動排班或使用自動排班" />
 
       {canManage && (
         <div className="space-y-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>自動排班</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AutoScheduleForm stores={stores.map((s) => ({ id: s.id, name: s.name }))} />
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>班別設定</CardTitle>

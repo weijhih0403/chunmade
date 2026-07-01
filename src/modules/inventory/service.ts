@@ -164,10 +164,14 @@ export async function getCount(actor: Actor, id: string) {
   const itemMap = new Map(items.map((i) => [i.id, i]));
   return {
     count,
-    rows: count.items.map((ci) => ({
-      ...ci,
-      itemName: itemMap.get(ci.itemId)?.name ?? ci.itemId,
-      unit: itemMap.get(ci.itemId)?.baseUnit.name ?? "",
-    })),
+    rows: count.items.map((ci) => {
+      const item = itemMap.get(ci.itemId);
+      return {
+        ...ci,
+        itemName: item?.name ?? ci.itemId,
+        unit: item?.baseUnit.name ?? "",
+        unitCode: item?.baseUnit.code ?? "",
+      };
+    }),
   };
 }

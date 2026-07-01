@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/permissions";
-import { getEmployee, listDepartments } from "@/modules/hr/service";
+import { getEmployee, listDepartments, listShifts } from "@/modules/hr/service";
 import { BackButton } from "@/components/layout/back-button";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmployeeForm } from "../../employee-form";
+import { EmployeePreferenceForm } from "../../employee-preference-form";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,10 @@ export default async function EditEmployeePage({
 }) {
   const { id } = await params;
   const actor = await requirePermission("employee.manage");
-  const [employee, departments] = await Promise.all([
+  const [employee, departments, shifts] = await Promise.all([
     getEmployee(actor, id),
     listDepartments(actor),
+    listShifts(actor),
   ]);
   if (!employee) notFound();
 
@@ -38,6 +40,23 @@ export default async function EditEmployeePage({
               hourlyRate: employee.hourlyRate?.toString() ?? "",
               isActive: employee.isActive,
             }}
+          />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>可排班偏好</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmployeePreferenceForm
+            employeeId={employee.id}
+            shifts={shifts.map((s) => ({ id: s.id, name: s.name }))}
+            preferences={employee.preferences.map((p) => ({
+              weekday: p.weekday,
+              shiftId: p.shiftId,
+              available: p.available,
+              preference: p.preference,
+            }))}
           />
         </CardContent>
       </Card>
