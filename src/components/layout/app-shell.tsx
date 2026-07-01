@@ -129,8 +129,6 @@ function currentPageLabel(pathname: string, items: NavItem[]) {
 
 export function AppShell({
   items,
-  userName,
-  roleLabels,
   signOutAction,
   children,
 }: {
@@ -247,11 +245,7 @@ export function AppShell({
               <p className="hidden truncate text-xs text-gray-400 sm:block">淳手作管理系統</p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-800">{userName}</p>
-              <p className="hidden text-xs text-gray-400 sm:block">{roleLabels}</p>
-            </div>
+          <div className="flex shrink-0 items-center">
             <form action={signOutAction}>
               <Button variant="outline" size="sm" type="submit">
                 登出

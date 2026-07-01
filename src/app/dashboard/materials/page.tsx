@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listItems } from "@/modules/catalog/service";
-import { deleteItemAction } from "@/modules/catalog/actions";
 import { PageHeader } from "@/components/layout/page-header";
-import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
+import { ItemCatalogList } from "@/components/catalog/item-catalog-list";
+import { EmptyState } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
-import { formatTWD } from "@/lib/money";
-import { ITEM_TYPE_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -45,30 +42,32 @@ export default async function MaterialsPage({
         title="原物料"
         description="原料與半成品（成品/銷售商品請見「商品」）"
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <form method="get" className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <form method="get" className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
               <input
                 type="text"
                 name="q"
                 defaultValue={q ?? ""}
                 placeholder="搜尋名稱 / SKU…"
-                className="h-10 w-44 rounded-lg border border-gray-300 px-3 text-sm sm:w-56"
+                className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm sm:w-56"
               />
-              <Button type="submit" variant="outline">
-                搜尋
-              </Button>
-              {search && (
-                <Link
-                  href="/dashboard/materials"
-                  className="inline-flex h-10 items-center px-1 text-sm text-gray-500 hover:text-amber-700"
-                >
-                  清除
-                </Link>
-              )}
+              <div className="flex gap-2">
+                <Button type="submit" variant="outline" className="flex-1 sm:flex-none">
+                  搜尋
+                </Button>
+                {search && (
+                  <Link
+                    href="/dashboard/materials"
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 text-sm text-gray-600 hover:bg-gray-50 sm:flex-none sm:border-0 sm:px-1"
+                  >
+                    清除
+                  </Link>
+                )}
+              </div>
             </form>
             {canManage && (
-              <Link href="/dashboard/items/new?from=materials">
-                <Button>新增原物料</Button>
+              <Link href="/dashboard/items/new?from=materials" className="block w-full sm:w-auto">
+                <Button className="w-full sm:w-auto">新增原物料</Button>
               </Link>
             )}
           </div>
@@ -85,66 +84,7 @@ export default async function MaterialsPage({
         <EmptyState message={search ? `找不到符合「${search}」的原物料。` : "尚無原物料，請先新增。"} />
       ) : (
         <>
-          <Table>
-            <THead>
-              <tr>
-                <TH className="w-[14%]">SKU</TH>
-                <TH className="w-[18%]">名稱</TH>
-                <TH className="w-[10%]">類型</TH>
-                <TH className="w-[12%]">分類</TH>
-                <TH className="w-[6%]">單位</TH>
-                <TH className="w-[8%] text-right">售價</TH>
-                <TH className="w-[8%] text-right">標準成本</TH>
-                <TH className="w-[8%]">庫管</TH>
-                {canManage && <TH className="w-[16%]">操作</TH>}
-              </tr>
-            </THead>
-            <tbody>
-              {items.map((it) => (
-                <TR key={it.id}>
-                  <TD className="truncate font-mono text-xs" title={it.sku}>
-                    {it.sku}
-                  </TD>
-                  <TD className="font-medium text-gray-900">
-                    <span className="line-clamp-2 whitespace-normal">{it.name}</span>
-                  </TD>
-                  <TD>
-                    <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
-                  </TD>
-                  <TD className="truncate">{it.category?.name ?? "—"}</TD>
-                  <TD className="whitespace-nowrap">{it.baseUnit.name}</TD>
-                  <TD className="whitespace-nowrap text-right">{formatTWD(it.price)}</TD>
-                  <TD className="whitespace-nowrap text-right">{formatTWD(it.standardCost)}</TD>
-                  <TD>
-                    {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
-                  </TD>
-                  {canManage && (
-                    <TD className="whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          href={`/dashboard/items/${it.id}/edit?from=materials`}
-                          className="text-amber-700 hover:underline"
-                        >
-                          編輯
-                        </Link>
-                        <form action={deleteItemAction}>
-                          <input type="hidden" name="itemId" value={it.id} />
-                          <ConfirmSubmitButton
-                            variant="ghost"
-                            size="sm"
-                            pendingText="刪除中…"
-                            confirmMessage={`確定要刪除原物料「${it.name}」？`}
-                          >
-                            <span className="text-red-600">刪除</span>
-                          </ConfirmSubmitButton>
-                        </form>
-                      </div>
-                    </TD>
-                  )}
-                </TR>
-              ))}
-            </tbody>
-          </Table>
+          <ItemCatalogList items={items} canManage={canManage} from="materials" />
 
           {totalPages > 1 && (
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
