@@ -27,6 +27,25 @@ async function main() {
   const unitBag = await prisma.unit.findFirst({ where: { companyId: company.id, code: "bag" } });
   if (!unitBag) throw new Error("找不到單位『包 (bag)』");
 
+  const unitBox = await prisma.unit.findFirst({ where: { companyId: company.id, code: "box" } });
+  if (!unitBox) throw new Error("找不到單位『箱 (box)』");
+
+  /** 以「箱」計量的包材／耗材 */
+  const BOX_UNIT_NAMES = new Set([
+    "K750湯碗",
+    "850碗",
+    "吸管(大)",
+    "吸管(小)",
+    "大圓湯匙",
+    "湯匙",
+    "奶油球",
+    "奶精",
+  ]);
+
+  function unitIdForName(name) {
+    return BOX_UNIT_NAMES.has(name) ? unitBox.id : unitBag.id;
+  }
+
   const catRaw = await prisma.category.findFirst({ where: { companyId: company.id, code: "RAW" } });
 
   // 去重，保留輸入順序
@@ -65,7 +84,7 @@ async function main() {
         sku,
         name,
         type: "RAW_MATERIAL",
-        baseUnitId: unitBag.id,
+        baseUnitId: unitIdForName(name),
         categoryId: catRaw?.id ?? null,
         price: 0,
         isActive: true,
