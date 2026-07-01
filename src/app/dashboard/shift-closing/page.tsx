@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireAnyPermission } from "@/lib/permissions";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import {
-  listShiftClosingEmployees,
   listShiftClosingReports,
   listShiftClosingStores,
 } from "@/modules/shift-closing/service";
@@ -17,9 +16,8 @@ export default async function ShiftClosingPage() {
   const canSubmit = actor.permissions.has("sales.shift");
   const today = formatDate(new Date());
 
-  const [stores, employees, reports] = await Promise.all([
+  const [stores, reports] = await Promise.all([
     listShiftClosingStores(actor),
-    listShiftClosingEmployees(actor),
     listShiftClosingReports(actor),
   ]);
 
@@ -33,7 +31,6 @@ export default async function ShiftClosingPage() {
       {canSubmit ? (
         <ShiftClosingWizard
           stores={stores.map((s) => ({ id: s.id, name: s.name }))}
-          employees={employees}
           defaultDate={today}
         />
       ) : (

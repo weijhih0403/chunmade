@@ -70,41 +70,41 @@ function MobileCard({
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-gray-900">{item.name}</p>
-          <p className="mt-0.5 font-mono text-xs text-gray-400">{item.sku}</p>
+          <p className="truncate font-medium text-gray-900">{item.name}</p>
+          <p className="mt-0.5 truncate font-mono text-xs text-gray-400">{item.sku}</p>
         </div>
         <Badge color="blue">{ITEM_TYPE_LABELS[item.type]}</Badge>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-gray-400">分類</dt>
-          <dd className="text-gray-700">{item.category?.name ?? "—"}</dd>
+          <dd className="truncate text-gray-700">{item.category?.name ?? "—"}</dd>
         </div>
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-gray-400">單位</dt>
-          <dd className="text-gray-700">{item.baseUnit.name}</dd>
+          <dd className="truncate text-gray-700">{item.baseUnit.name}</dd>
         </div>
         {isMaterial && (
-          <div className="col-span-2">
+          <div className="col-span-2 min-w-0">
             <dt className="text-xs text-gray-400">供應商</dt>
-            <dd className="text-gray-700">{item.supplier?.name ?? "—"}</dd>
+            <dd className="truncate text-gray-700">{item.supplier?.name ?? "—"}</dd>
           </div>
         )}
-        <div className={isMaterial ? "col-span-2" : undefined}>
+        <div className={isMaterial ? "col-span-2 min-w-0" : "min-w-0"}>
           <dt className="text-xs text-gray-400">{isMaterial ? "標準成本" : "售價"}</dt>
-          <dd className="font-medium text-gray-900">
+          <dd className="truncate font-medium text-gray-900">
             {formatTWD(isMaterial ? item.standardCost : item.price)}
           </dd>
         </div>
         {!isMaterial && (
-          <div>
+          <div className="min-w-0">
             <dt className="text-xs text-gray-400">標準成本</dt>
-            <dd className="text-gray-700">{formatTWD(item.standardCost)}</dd>
+            <dd className="truncate text-gray-700">{formatTWD(item.standardCost)}</dd>
           </div>
         )}
-        <div>
+        <div className="min-w-0">
           <dt className="text-xs text-gray-400">庫存</dt>
-          <dd>
+          <dd className="whitespace-nowrap">
             {item.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
           </dd>
         </div>
@@ -137,36 +137,38 @@ export function ItemCatalogList({
       </div>
 
       <div className="hidden md:block">
-        <Table>
+        <Table className="min-w-[56rem] md:table-auto">
           <THead>
             <tr>
-              <TH className="w-[14%]">SKU</TH>
-              <TH className="w-[18%]">名稱</TH>
-              <TH className="w-[8%]">類型</TH>
-              <TH className="w-[10%]">分類</TH>
-              {isMaterial && <TH className="w-[14%]">供應商</TH>}
-              <TH className="w-[7%]">單位</TH>
-              {!isMaterial && <TH className="w-[10%] text-right">售價</TH>}
-              <TH className="w-[9%] text-right">標準成本</TH>
-              <TH className="w-[7%]">庫管</TH>
-              {canManage && <TH className="w-[14%]">操作</TH>}
+              <TH>SKU</TH>
+              <TH>名稱</TH>
+              <TH>類型</TH>
+              <TH>分類</TH>
+              {isMaterial && <TH>供應商</TH>}
+              <TH>單位</TH>
+              {!isMaterial && <TH className="text-right">售價</TH>}
+              <TH className="text-right">標準成本</TH>
+              <TH>庫管</TH>
+              {canManage && <TH>操作</TH>}
             </tr>
           </THead>
           <tbody>
             {items.map((it) => (
               <TR key={it.id}>
-                <TD className="truncate font-mono text-xs" title={it.sku}>
+                <TD className="max-w-[12rem] truncate font-mono text-xs" title={it.sku}>
                   {it.sku}
                 </TD>
-                <TD className="font-medium text-gray-900">
-                  <span className="line-clamp-2 whitespace-normal">{it.name}</span>
+                <TD className="max-w-[14rem] truncate font-medium text-gray-900" title={it.name}>
+                  {it.name}
                 </TD>
-                <TD>
+                <TD className="whitespace-nowrap">
                   <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
                 </TD>
-                <TD className="truncate">{it.category?.name ?? "—"}</TD>
+                <TD className="max-w-[10rem] truncate" title={it.category?.name ?? undefined}>
+                  {it.category?.name ?? "—"}
+                </TD>
                 {isMaterial && (
-                  <TD className="truncate" title={it.supplier?.name ?? undefined}>
+                  <TD className="max-w-[12rem] truncate" title={it.supplier?.name ?? undefined}>
                     {it.supplier?.name ?? "—"}
                   </TD>
                 )}
@@ -177,7 +179,7 @@ export function ItemCatalogList({
                 <TD className="whitespace-nowrap text-right font-medium text-gray-900">
                   {formatTWD(it.standardCost)}
                 </TD>
-                <TD>
+                <TD className="whitespace-nowrap">
                   {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
                 </TD>
                 {canManage && (

@@ -11,7 +11,6 @@ import { formatDate } from "@/lib/dates";
 import { SignaturePad, type SignaturePadHandle } from "./signature-pad";
 
 type StoreOpt = { id: string; name: string };
-type EmpOpt = { id: string; name: string };
 
 type QtyState = { qty520: number; qty850: number; qty700: number; qty500: number };
 
@@ -19,11 +18,9 @@ type Step = "quantities" | "signature" | "confirm";
 
 export function ShiftClosingWizard({
   stores,
-  employees,
   defaultDate,
 }: {
   stores: StoreOpt[];
-  employees: EmpOpt[];
   defaultDate: string;
 }) {
   const router = useRouter();
@@ -32,8 +29,6 @@ export function ShiftClosingWizard({
   const [closingDate, setClosingDate] = useState(defaultDate);
   const [qty, setQty] = useState<QtyState>({ qty520: 0, qty850: 0, qty700: 0, qty500: 0 });
   const [signatureData, setSignatureData] = useState<string | null>(null);
-  const [matchedEmployeeId, setMatchedEmployeeId] = useState("");
-  const [signerName, setSignerName] = useState("");
 
   const signaturePadRef = useRef<SignaturePadHandle>(null);
   const fullscreenRef = useRef<HTMLDivElement>(null);
@@ -246,66 +241,6 @@ export function ShiftClosingWizard({
         <input type="hidden" name="qty700" value={qty.qty700} />
         <input type="hidden" name="qty500" value={qty.qty500} />
         <input type="hidden" name="signatureData" value={signatureData ?? ""} />
-        <input type="hidden" name="matchedEmployeeId" value={matchedEmployeeId} />
-        <input type="hidden" name="signerName" value={signerName} />
-
-        <div>
-          <Label htmlFor="matchedEmployeeIdSelect">簽名人（選填）</Label>
-          <Select
-            id="matchedEmployeeIdSelect"
-            value={matchedEmployeeId}
-            onChange={(e) => {
-              const id = e.target.value;
-              setMatchedEmployeeId(id);
-              const emp = employees.find((x) => x.id === id);
-              setSignerName(emp?.name ?? "");
-            }}
-          >
-            <option value="">（不指定）</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        {!matchedEmployeeId && (
-          <div>
-            <Label htmlFor="signerNameInput">或手動輸入姓名（選填）</Label>
-            <Input
-              id="signerNameInput"
-              value={signerName}
-              onChange={(e) => setSignerName(e.target.value)}
-              placeholder="可不填，僅保存簽名圖"
-            />
-          </div>
-        )}
-
-        {employees.length > 0 && (
-          <div>
-            <p className="mb-2 text-xs text-gray-500">快速選擇</p>
-            <div className="flex flex-wrap gap-2">
-              {employees.map((e) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  onClick={() => {
-                    setMatchedEmployeeId(e.id);
-                    setSignerName(e.name);
-                  }}
-                  className={`rounded-full px-3 py-1.5 text-sm ${
-                    matchedEmployeeId === e.id
-                      ? "bg-gray-900 text-white"
-                      : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
-                  }`}
-                >
-                  {e.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {state.message && !state.ok && (
           <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.message}</p>

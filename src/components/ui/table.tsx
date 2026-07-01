@@ -22,7 +22,12 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
 }
 
 export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-3 py-2.5 text-gray-700 md:px-4 md:py-3", className)} {...props} />;
+  return (
+    <td
+      className={cn("whitespace-nowrap px-3 py-2.5 text-gray-700 md:px-4 md:py-3", className)}
+      {...props}
+    />
+  );
 }
 
 export function EmptyState({ message = "目前沒有資料" }: { message?: string }) {
