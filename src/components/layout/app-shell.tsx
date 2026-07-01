@@ -39,29 +39,26 @@ function NavLinks({
   return (
     <nav
       className={cn(
-        "flex-1 overflow-y-auto py-2 transition-all duration-300 ease-in-out",
+        "flex-1 overflow-y-auto py-2",
         collapsed ? "px-2" : "px-2 py-3",
       )}
     >
       {Object.entries(groups).map(([group, groupItems], groupIndex) => (
         <div
           key={group}
-          className={cn(
-            "transition-all duration-300 ease-in-out",
-            collapsed ? "mb-1" : "mb-4",
-          )}
+          className={cn(collapsed ? "mb-1" : "mb-4")}
         >
           {groupIndex > 0 && (
             <div
               className={cn(
-                "mx-auto overflow-hidden transition-all duration-300 ease-in-out",
-                collapsed ? "my-1.5 h-px w-6 bg-gray-200 opacity-100" : "h-0 opacity-0",
+                "mx-auto",
+                collapsed ? "my-1.5 h-px w-6 bg-gray-200" : "hidden",
               )}
             />
           )}
           <p
             className={cn(
-              "overflow-hidden px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 transition-all duration-300 ease-in-out",
+              "overflow-hidden px-3 text-xs font-semibold uppercase tracking-wide text-gray-400 transition-[max-height,opacity,padding] duration-200 ease-out",
               collapsed ? "max-h-0 pb-0 opacity-0" : "max-h-6 pb-1 opacity-100",
             )}
           >
@@ -73,11 +70,12 @@ function NavLinks({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 onClick={onNavigate}
                 title={item.label}
                 aria-label={item.label}
                 className={cn(
-                  "relative mb-0.5 flex items-center rounded-xl transition-all duration-200 ease-out",
+                  "relative mb-0.5 flex items-center rounded-xl transition-colors duration-150",
                   collapsed
                     ? "mx-auto h-10 w-10 justify-center"
                     : "gap-2.5 px-3 py-2 text-sm",
@@ -86,14 +84,14 @@ function NavLinks({
                       ? "bg-amber-100 text-amber-800 shadow-sm ring-1 ring-amber-200/80"
                       : "bg-amber-100 font-medium text-amber-900"
                     : collapsed
-                      ? "text-gray-500 hover:scale-105 hover:bg-gray-100 hover:text-gray-800 active:scale-95"
+                      ? "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                       : "text-gray-700 hover:bg-gray-100",
                 )}
               >
                 {active && (
                   <span
                     className={cn(
-                      "absolute top-1/2 -translate-y-1/2 rounded-r-full bg-amber-500 transition-all duration-200",
+                      "absolute top-1/2 -translate-y-1/2 rounded-r-full bg-amber-500",
                       collapsed ? "-left-2 h-5 w-1" : "left-0 h-4 w-1",
                     )}
                   />
@@ -101,13 +99,13 @@ function NavLinks({
                 <NavIcon
                   href={item.href}
                   className={cn(
-                    "shrink-0 transition-colors duration-200",
+                    "shrink-0",
                     !collapsed && (active ? "text-amber-700" : "text-gray-400"),
                   )}
                 />
                 <span
                   className={cn(
-                    "truncate transition-all duration-300 ease-in-out",
+                    "truncate transition-[max-width,opacity] duration-200 ease-out",
                     collapsed ? "pointer-events-none max-w-0 opacity-0" : "max-w-full opacity-100",
                   )}
                 >
@@ -175,13 +173,13 @@ export function AppShell({
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <aside
         className={cn(
-          "hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out md:flex",
+          "hidden h-screen shrink-0 flex-col border-r border-gray-200 bg-white transition-[width] duration-200 ease-out md:flex",
           collapsed ? "w-16" : "w-56",
         )}
       >
         <div
           className={cn(
-            "flex shrink-0 border-b border-gray-100 transition-all duration-300 ease-in-out",
+            "flex shrink-0 border-b border-gray-100",
             collapsed
               ? "flex-col items-center gap-2 px-2 py-3"
               : "h-14 items-center justify-between gap-2 px-3",
@@ -191,7 +189,7 @@ export function AppShell({
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-all duration-200 hover:scale-105 hover:bg-amber-50 hover:text-amber-800 active:scale-95"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors duration-150 hover:bg-amber-50 hover:text-amber-800"
             aria-label={collapsed ? "展開選單" : "收合選單"}
             title={collapsed ? "展開選單" : "收合選單"}
           >
@@ -245,9 +243,7 @@ export function AppShell({
               <span className="text-lg leading-none">☰</span>
             </button>
             <div className="min-w-0">
-              <p key={pathname} className="truncate text-sm font-medium text-gray-900 animate-fade-in">
-                {pageTitle}
-              </p>
+              <p className="truncate text-sm font-medium text-gray-900">{pageTitle}</p>
               <p className="hidden truncate text-xs text-gray-400 sm:block">淳手作管理系統</p>
             </div>
           </div>
@@ -263,9 +259,7 @@ export function AppShell({
             </form>
           </div>
         </header>
-        <main key={pathname} className="flex-1 overflow-y-auto p-4 animate-page-in md:p-5 lg:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-5 lg:p-6">{children}</main>
       </div>
     </div>
   );

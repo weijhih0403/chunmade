@@ -19,7 +19,7 @@ export function BrandMark({
       <Link
         href="/dashboard"
         className={cn(
-          "flex min-w-0 items-center overflow-hidden transition-all duration-300 ease-in-out",
+          "flex min-w-0 items-center overflow-hidden transition-[gap] duration-200 ease-out",
           collapsed ? "justify-center" : "gap-2",
           className,
         )}
@@ -30,12 +30,12 @@ export function BrandMark({
           alt="淳手作"
           width={36}
           height={36}
-          className="h-9 w-9 shrink-0 object-contain transition-transform duration-300 ease-in-out"
+          className="h-9 w-9 shrink-0 object-contain"
           priority
         />
         <span
           className={cn(
-            "truncate text-sm font-bold leading-snug text-amber-900 transition-all duration-300 ease-in-out",
+            "truncate text-sm font-bold leading-snug text-amber-900 transition-[max-width,opacity] duration-200 ease-out",
             collapsed ? "max-w-0 opacity-0" : "max-w-[9rem] opacity-100",
           )}
         >
@@ -57,7 +57,7 @@ export function BrandMark({
         width={collapsed ? 36 : centered ? 200 : 160}
         height={collapsed ? 36 : centered ? 56 : 48}
         className={cn(
-          "object-contain transition-all duration-300 ease-in-out",
+          "object-contain transition-[width,height] duration-200 ease-out",
           centered ? "mx-auto h-14 w-auto max-w-[14rem]" : "object-left",
           collapsed ? "h-9 w-9" : !centered && "h-10 w-auto max-w-[10.5rem]",
         )}

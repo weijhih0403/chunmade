@@ -20,10 +20,9 @@
   --font-sans:
     "Noto Sans TC", system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",
     sans-serif;
-  --animate-fade-in: fade-in 0.25s var(--motion-ease) both;
-  --animate-fade-in-up: fade-in-up 0.35s var(--motion-ease) both;
-  --animate-page-in: page-in 0.3s var(--motion-ease) both;
-  --animate-drawer-in: drawer-in 0.3s var(--motion-ease) both;
+  --animate-fade-in: fade-in 0.2s var(--motion-ease) forwards;
+  --animate-fade-in-up: fade-in-up 0.25s var(--motion-ease) forwards;
+  --animate-drawer-in: drawer-in 0.25s var(--motion-ease) both;
   --animate-drawer-out: drawer-out 0.25s var(--motion-ease) both;
   --animate-backdrop-in: backdrop-in 0.25s ease both;
   --animate-backdrop-out: backdrop-out 0.2s ease both;
@@ -39,17 +38,6 @@
 }
 
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes page-in {
   from {
     opacity: 0;
     transform: translateY(6px);
