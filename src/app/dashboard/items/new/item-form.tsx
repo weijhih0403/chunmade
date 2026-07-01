@@ -36,6 +36,7 @@ export function ItemForm({
   submitLabel = "建立商品",
   defaultType = "SALE_ITEM",
   returnTo = "/dashboard/items",
+  materialMode = false,
 }: {
   categories: Option[];
   units: Option[];
@@ -44,6 +45,8 @@ export function ItemForm({
   submitLabel?: string;
   defaultType?: string;
   returnTo?: string;
+  /** 原物料模式：不顯示售價，僅編輯標準成本 */
+  materialMode?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
   const router = useRouter();
@@ -57,10 +60,14 @@ export function ItemForm({
   }, [state.ok, router, returnTo]);
 
   const err = (f: string) => state.fieldErrors?.[f]?.[0];
+  const typeOptions = materialMode
+    ? Object.entries(ITEM_TYPE_LABELS).filter(([v]) => v === "RAW_MATERIAL" || v === "SEMI_FINISHED")
+    : Object.entries(ITEM_TYPE_LABELS);
 
   return (
     <form action={formAction} className="max-w-2xl space-y-4">
       {defaults?.id && <input type="hidden" name="id" value={defaults.id} />}
+      {materialMode && <input type="hidden" name="price" value="0" />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="sku">SKU</Label>
@@ -84,7 +91,7 @@ export function ItemForm({
         <div>
           <Label htmlFor="type">品項類型</Label>
           <Select id="type" name="type" defaultValue={defaults?.type ?? defaultType}>
-            {Object.entries(ITEM_TYPE_LABELS).map(([v, l]) => (
+            {typeOptions.map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
@@ -123,19 +130,21 @@ export function ItemForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className={materialMode ? undefined : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
+        {!materialMode && (
+          <div>
+            <Label htmlFor="price">售價</Label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              step="0.01"
+              defaultValue={defaults?.price ?? "0"}
+            />
+          </div>
+        )}
         <div>
-          <Label htmlFor="price">售價</Label>
-          <Input
-            id="price"
-            name="price"
-            type="number"
-            step="0.01"
-            defaultValue={defaults?.price ?? "0"}
-          />
-        </div>
-        <div>
-          <Label htmlFor="standardCost">標準成本</Label>
+          <Label htmlFor="standardCost">{materialMode ? "標準成本（進貨價）" : "標準成本"}</Label>
           <Input
             id="standardCost"
             name="standardCost"

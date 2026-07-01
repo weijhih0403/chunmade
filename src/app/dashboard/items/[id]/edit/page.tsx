@@ -25,6 +25,9 @@ export default async function EditItemPage({
   ]);
   if (!item) notFound();
 
+  const materialMode =
+    fromMaterials || item.type === "RAW_MATERIAL" || item.type === "SEMI_FINISHED";
+
   return (
     <div className="space-y-4">
       <BackButton fallbackHref={fromMaterials ? "/dashboard/materials" : "/dashboard/items"} />
@@ -32,6 +35,7 @@ export default async function EditItemPage({
       <ItemForm
         action={updateItemAction}
         submitLabel="儲存變更"
+        materialMode={materialMode}
         returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}

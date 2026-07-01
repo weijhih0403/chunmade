@@ -31,6 +31,7 @@ export default async function NewItemPage({
       <ItemForm
         action={createItemAction}
         defaultType={fromMaterials ? "RAW_MATERIAL" : "SALE_ITEM"}
+        materialMode={fromMaterials}
         returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}

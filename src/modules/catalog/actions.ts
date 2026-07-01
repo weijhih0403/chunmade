@@ -8,10 +8,19 @@ import { ConflictError, NotFoundError } from "@/lib/errors";
 import { type FormState, toFormError } from "@/lib/forms";
 import { itemSchema, categorySchema, unitSchema } from "./schemas";
 
+function isMaterialItemType(type: string) {
+  return type === "RAW_MATERIAL" || type === "SEMI_FINISHED";
+}
+
+function materialPrice(formData: FormData, type: string) {
+  return isMaterialItemType(type) ? "0" : (formData.get("price") ?? "0");
+}
+
 export async function createItemAction(_prev: FormState, formData: FormData): Promise<FormState> {
   try {
     const actor = await requirePermission("catalog.manage");
     const scope = companyScope(actor);
+    const type = String(formData.get("type") ?? "");
     const data = itemSchema.parse({
       sku: formData.get("sku"),
       barcode: formData.get("barcode") ?? "",
@@ -20,7 +29,7 @@ export async function createItemAction(_prev: FormState, formData: FormData): Pr
       categoryId: formData.get("categoryId") ?? "",
       baseUnitId: formData.get("baseUnitId"),
       taxType: formData.get("taxType") ?? "TAXABLE",
-      price: formData.get("price") ?? "0",
+      price: materialPrice(formData, type),
       standardCost: formData.get("standardCost") ?? "0",
       trackStock: formData.get("trackStock") === "on" || formData.get("trackStock") === "true",
       safetyStock: formData.get("safetyStock") ?? "0",
@@ -89,7 +98,7 @@ export async function updateItemAction(_prev: FormState, formData: FormData): Pr
       categoryId: formData.get("categoryId") ?? "",
       baseUnitId: formData.get("baseUnitId"),
       taxType: formData.get("taxType") ?? existing.taxType,
-      price: formData.get("price") ?? "0",
+      price: materialPrice(formData, String(formData.get("type") ?? existing.type)),
       standardCost: formData.get("standardCost") ?? "0",
       trackStock: formData.get("trackStock") === "on" || formData.get("trackStock") === "true",
       safetyStock: formData.get("safetyStock") ?? "0",
