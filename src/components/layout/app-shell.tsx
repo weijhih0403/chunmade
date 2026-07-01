@@ -6,6 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { NavItem } from "./nav";
+import { BrandMark } from "./brand-mark";
 
 function NavLinks({
   items,
@@ -80,8 +81,8 @@ export function AppShell({
           collapsed ? "w-16" : "w-60",
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-          {!collapsed && <span className="font-bold text-amber-800">淳手作 ERP</span>}
+        <div className="flex h-14 items-center justify-between gap-2 border-b border-gray-100 px-3">
+          <BrandMark collapsed={collapsed} />
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="flex h-10 w-10 items-center justify-center rounded-lg text-2xl leading-none text-gray-600 hover:bg-gray-100"
@@ -103,7 +104,7 @@ export function AppShell({
           />
           <aside className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-gray-200 bg-white shadow-xl">
             <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-              <span className="font-bold text-amber-800">淳手作 ERP</span>
+              <BrandMark />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="rounded p-1 text-gray-500 hover:bg-gray-100"
