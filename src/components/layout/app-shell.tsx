@@ -16,42 +16,12 @@ function isActive(pathname: string, href: string) {
 
 function NavLinks({
   items,
-  collapsed,
   onNavigate,
 }: {
   items: NavItem[];
-  collapsed?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
-
-  if (collapsed) {
-    return (
-      <nav className="flex flex-1 flex-col items-center gap-0.5 overflow-y-auto px-1 py-2">
-        {items.map((item) => {
-          const active = isActive(pathname, item.href);
-          const short = item.shortLabel ?? item.label.slice(0, 1);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              title={item.label}
-              className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold leading-none transition-colors",
-                short.length > 1 && "text-[9px]",
-                active
-                  ? "bg-amber-100 text-amber-900 ring-1 ring-amber-200"
-                  : "text-gray-600 hover:bg-gray-100",
-              )}
-            >
-              {short}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
 
   const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
     (acc[item.group] ??= []).push(item);
@@ -155,7 +125,7 @@ export function AppShell({
             {collapsed ? "»" : "«"}
           </button>
         </div>
-        <NavLinks items={items} collapsed={collapsed} />
+        {!collapsed && <NavLinks items={items} />}
       </aside>
 
       {mobileOpen && (
