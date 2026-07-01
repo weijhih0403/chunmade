@@ -18,6 +18,7 @@ export type CatalogListItem = {
   trackStock: boolean;
   category: { name: string } | null;
   baseUnit: { name: string };
+  supplier: { name: string } | null;
 };
 
 function editHref(itemId: string, from?: "materials") {
@@ -83,6 +84,12 @@ function MobileCard({
           <dt className="text-xs text-gray-400">單位</dt>
           <dd className="text-gray-700">{item.baseUnit.name}</dd>
         </div>
+        {isMaterial && (
+          <div className="col-span-2">
+            <dt className="text-xs text-gray-400">供應商</dt>
+            <dd className="text-gray-700">{item.supplier?.name ?? "—"}</dd>
+          </div>
+        )}
         <div className={isMaterial ? "col-span-2" : undefined}>
           <dt className="text-xs text-gray-400">{isMaterial ? "標準成本" : "售價"}</dt>
           <dd className="font-medium text-gray-900">
@@ -134,14 +141,15 @@ export function ItemCatalogList({
           <THead>
             <tr>
               <TH className="w-[14%]">SKU</TH>
-              <TH className="w-[22%]">名稱</TH>
-              <TH className="w-[10%]">類型</TH>
-              <TH className="w-[12%]">分類</TH>
-              <TH className="w-[8%]">單位</TH>
+              <TH className="w-[18%]">名稱</TH>
+              <TH className="w-[8%]">類型</TH>
+              <TH className="w-[10%]">分類</TH>
+              {isMaterial && <TH className="w-[14%]">供應商</TH>}
+              <TH className="w-[7%]">單位</TH>
               {!isMaterial && <TH className="w-[10%] text-right">售價</TH>}
-              <TH className="w-[10%] text-right">標準成本</TH>
-              <TH className="w-[8%]">庫管</TH>
-              {canManage && <TH className="w-[16%]">操作</TH>}
+              <TH className="w-[9%] text-right">標準成本</TH>
+              <TH className="w-[7%]">庫管</TH>
+              {canManage && <TH className="w-[14%]">操作</TH>}
             </tr>
           </THead>
           <tbody>
@@ -157,6 +165,11 @@ export function ItemCatalogList({
                   <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
                 </TD>
                 <TD className="truncate">{it.category?.name ?? "—"}</TD>
+                {isMaterial && (
+                  <TD className="truncate" title={it.supplier?.name ?? undefined}>
+                    {it.supplier?.name ?? "—"}
+                  </TD>
+                )}
                 <TD className="whitespace-nowrap">{it.baseUnit.name}</TD>
                 {!isMaterial && (
                   <TD className="whitespace-nowrap text-right">{formatTWD(it.price)}</TD>

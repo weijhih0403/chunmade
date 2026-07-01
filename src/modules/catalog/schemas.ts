@@ -24,6 +24,7 @@ export const itemSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v && v !== "" ? Number(v) : null)),
+  supplierId: z.string().optional().or(z.literal("")),
 });
 
 export const categorySchema = z.object({

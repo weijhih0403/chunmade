@@ -24,6 +24,7 @@ export type ItemDefaults = {
   reorderPoint?: string;
   shelfLifeDays?: number | null;
   trackStock?: boolean;
+  supplierId?: string | null;
 };
 
 type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -31,6 +32,7 @@ type Action = (prev: FormState, formData: FormData) => Promise<FormState>;
 export function ItemForm({
   categories,
   units,
+  suppliers = [],
   action,
   defaults,
   submitLabel = "建立商品",
@@ -40,6 +42,7 @@ export function ItemForm({
 }: {
   categories: Option[];
   units: Option[];
+  suppliers?: Option[];
   action: Action;
   defaults?: ItemDefaults;
   submitLabel?: string;
@@ -129,6 +132,20 @@ export function ItemForm({
           {err("baseUnitId") && <p className="mt-1 text-xs text-red-600">{err("baseUnitId")}</p>}
         </div>
       </div>
+
+      {materialMode && (
+        <div>
+          <Label htmlFor="supplierId">供應商</Label>
+          <Select id="supplierId" name="supplierId" defaultValue={defaults?.supplierId ?? ""}>
+            <option value="">（無）</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       <div className={materialMode ? undefined : "grid grid-cols-1 gap-4 sm:grid-cols-2"}>
         {!materialMode && (

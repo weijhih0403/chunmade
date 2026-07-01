@@ -35,6 +35,7 @@ export async function createItemAction(_prev: FormState, formData: FormData): Pr
       safetyStock: formData.get("safetyStock") ?? "0",
       reorderPoint: formData.get("reorderPoint") ?? "0",
       shelfLifeDays: (formData.get("shelfLifeDays") as string) ?? "",
+      supplierId: formData.get("supplierId") ?? "",
     });
 
     const dup = await prisma.item.findUnique({
@@ -59,6 +60,7 @@ export async function createItemAction(_prev: FormState, formData: FormData): Pr
           safetyStock: data.safetyStock,
           reorderPoint: data.reorderPoint,
           shelfLifeDays: data.shelfLifeDays,
+          supplierId: data.supplierId || null,
           createdBy: actor.id,
         },
       });
@@ -104,6 +106,7 @@ export async function updateItemAction(_prev: FormState, formData: FormData): Pr
       safetyStock: formData.get("safetyStock") ?? "0",
       reorderPoint: formData.get("reorderPoint") ?? "0",
       shelfLifeDays: (formData.get("shelfLifeDays") as string) ?? "",
+      supplierId: formData.get("supplierId") ?? "",
     });
 
     await prisma.$transaction(async (tx) => {
@@ -122,6 +125,7 @@ export async function updateItemAction(_prev: FormState, formData: FormData): Pr
           safetyStock: data.safetyStock,
           reorderPoint: data.reorderPoint,
           shelfLifeDays: data.shelfLifeDays,
+          supplierId: data.supplierId || null,
         },
       });
       await writeAudit(tx, {

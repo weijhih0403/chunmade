@@ -35,7 +35,7 @@ export async function listItems(
   const [items, total] = await Promise.all([
     prisma.item.findMany({
       where,
-      include: { category: true, baseUnit: true },
+      include: { category: true, baseUnit: true, supplier: true },
       orderBy: { name: "asc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -48,16 +48,23 @@ export async function listItems(
 
 export async function getItem(actor: Actor, id: string) {
   const scope = companyScope(actor);
-  return prisma.item.findFirst({ where: { ...scope, id, deletedAt: null } });
+  return prisma.item.findFirst({
+    where: { ...scope, id, deletedAt: null },
+    include: { supplier: true },
+  });
 }
 
 export async function getCatalogFormData(actor: Actor) {
   const scope = companyScope(actor);
-  const [categories, units] = await Promise.all([
+  const [categories, units, suppliers] = await Promise.all([
     prisma.category.findMany({ where: { ...scope, deletedAt: null }, orderBy: { name: "asc" } }),
     prisma.unit.findMany({ where: { ...scope, deletedAt: null }, orderBy: { name: "asc" } }),
+    prisma.supplier.findMany({
+      where: { ...scope, deletedAt: null, isActive: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
-  return { categories, units };
+  return { categories, units, suppliers };
 }
 
 export async function listCategories(actor: Actor) {

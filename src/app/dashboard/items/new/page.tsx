@@ -15,7 +15,7 @@ export default async function NewItemPage({
   const { from } = await searchParams;
   const fromMaterials = from === "materials";
   const actor = await requirePermission("catalog.manage");
-  const { categories, units } = await getCatalogFormData(actor);
+  const { categories, units, suppliers } = await getCatalogFormData(actor);
 
   return (
     <div className="space-y-4">
@@ -35,6 +35,7 @@ export default async function NewItemPage({
         returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}
+        suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
       />
     </div>
   );

@@ -19,7 +19,7 @@ export default async function EditItemPage({
   const { from } = await searchParams;
   const fromMaterials = from === "materials";
   const actor = await requirePermission("catalog.manage");
-  const [item, { categories, units }] = await Promise.all([
+  const [item, { categories, units, suppliers }] = await Promise.all([
     getItem(actor, id),
     getCatalogFormData(actor),
   ]);
@@ -39,6 +39,7 @@ export default async function EditItemPage({
         returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}
+        suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))}
         defaults={{
           id: item.id,
           sku: item.sku,
@@ -53,6 +54,7 @@ export default async function EditItemPage({
           reorderPoint: item.reorderPoint.toString(),
           shelfLifeDays: item.shelfLifeDays,
           trackStock: item.trackStock,
+          supplierId: item.supplierId,
         }}
       />
     </div>

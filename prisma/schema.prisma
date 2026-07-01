@@ -725,6 +725,7 @@ model Item {
   safetyStock    Decimal  @default(0) @db.Decimal(18, 4)
   reorderPoint   Decimal  @default(0) @db.Decimal(18, 4)
   shelfLifeDays  Int?
+  supplierId     String?
   isActive       Boolean  @default(true)
   imageUrl       String?
 
@@ -736,6 +737,7 @@ model Item {
 
   category     Category? @relation(fields: [categoryId], references: [id])
   baseUnit     Unit      @relation("ItemBaseUnit", fields: [baseUnitId], references: [id])
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
 
   variants       ItemVariant[]
   modifierGroups ModifierGroup[]
@@ -750,6 +752,7 @@ model Item {
   @@index([type])
   @@index([categoryId])
   @@index([barcode])
+  @@index([supplierId])
 }
 
 // 為避免 Unit 背向關聯爆炸，僅 baseUnit 建立關聯；purchaseUnit/salesUnit 以純量 id 處理
@@ -842,6 +845,7 @@ model Supplier {
   deletedAt   DateTime?
 
   purchaseOrders PurchaseOrder[]
+  items          Item[]
 
   @@unique([companyId, code])
   @@index([companyId])
