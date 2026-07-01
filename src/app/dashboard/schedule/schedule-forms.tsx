@@ -28,6 +28,10 @@ export function ShiftForm() {
         <label className="mb-1 block text-xs text-gray-500">結束</label>
         <Input name="endTime" type="time" required className="w-full sm:w-28" />
       </div>
+      <div className="w-full sm:w-auto">
+        <label className="mb-1 block text-xs text-gray-500">需求人數</label>
+        <Input name="requiredHeadcount" type="number" min={1} max={20} defaultValue={1} className="w-full sm:w-20" />
+      </div>
       <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "新增中…" : "新增班別"}
       </Button>
@@ -109,10 +113,11 @@ export function ScheduleForm({
 
 export function AutoScheduleForm({ stores }: { stores: Opt[] }) {
   const [state, action, pending] = useActionState(autoGenerateScheduleAction, initialFormState);
+  const now = new Date();
   return (
     <form action={action} className="space-y-3">
       <p className="text-sm text-gray-500">
-        依員工「可排班偏好」、請假紀錄與門市自動產生班表。每位員工每天最多排一班；已核准請假會自動跳過。
+        條件約束自動排班：遵守請假／偏好、班別需求人數、新人與老員工搭班、週末班、每月班數上下限、連續上班與晚接早等規則。不能上班的日期請用「請假」或「可排班偏好」設定。
       </p>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2">
         <div className="w-full sm:w-auto">
@@ -129,11 +134,15 @@ export function AutoScheduleForm({ stores }: { stores: Opt[] }) {
           </Select>
         </div>
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs text-gray-500">天數</label>
-          <Input name="days" type="number" min={1} max={28} defaultValue={14} className="w-full sm:w-20" />
+          <label className="mb-1 block text-xs text-gray-500">年份</label>
+          <Input name="year" type="number" defaultValue={now.getFullYear()} className="w-full sm:w-24" />
         </div>
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs text-gray-500">每班人數</label>
+          <label className="mb-1 block text-xs text-gray-500">月份</label>
+          <Input name="month" type="number" min={1} max={12} defaultValue={now.getMonth() + 1} className="w-full sm:w-20" />
+        </div>
+        <div className="w-full sm:w-auto">
+          <label className="mb-1 block text-xs text-gray-500">預設每班人數</label>
           <Input
             name="minPerShift"
             type="number"
@@ -145,20 +154,20 @@ export function AutoScheduleForm({ stores }: { stores: Opt[] }) {
         </div>
         <label className="flex items-center gap-1 pb-2 text-sm text-gray-700">
           <input type="checkbox" name="clearExisting" className="h-4 w-4" />
-          清除該門市既有班表後重排
+          清除該門市當月既有班表後重排
         </label>
         <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "產生中…" : "自動排班"}
         </Button>
       </div>
       {state.message && (
-        <p
-          className={`rounded-lg px-3 py-2 text-sm ${
-            state.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+        <pre
+          className={`whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
+            state.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"
           }`}
         >
           {state.message}
-        </p>
+        </pre>
       )}
     </form>
   );

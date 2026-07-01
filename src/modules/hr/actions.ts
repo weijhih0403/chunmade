@@ -16,6 +16,9 @@ const employeeSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   departmentId: z.string().optional().or(z.literal("")),
   hourlyRate: z.string().optional().or(z.literal("")),
+  hireDate: z.string().optional().or(z.literal("")),
+  minMonthlyShifts: z.string().optional().or(z.literal("")),
+  maxMonthlyShifts: z.string().optional().or(z.literal("")),
 });
 
 export async function createEmployeeAction(
@@ -31,6 +34,9 @@ export async function createEmployeeAction(
       phone: formData.get("phone") ?? "",
       departmentId: formData.get("departmentId") ?? "",
       hourlyRate: formData.get("hourlyRate") ?? "",
+      hireDate: formData.get("hireDate") ?? "",
+      minMonthlyShifts: formData.get("minMonthlyShifts") ?? "",
+      maxMonthlyShifts: formData.get("maxMonthlyShifts") ?? "",
     });
     const dup = await prisma.employee.findUnique({
       where: { companyId_employeeNo: { companyId: scope.companyId, employeeNo: data.employeeNo } },
@@ -44,6 +50,9 @@ export async function createEmployeeAction(
         phone: data.phone || null,
         departmentId: data.departmentId || null,
         hourlyRate: data.hourlyRate ? data.hourlyRate : null,
+        hireDate: data.hireDate ? new Date(data.hireDate) : null,
+        minMonthlyShifts: data.minMonthlyShifts ? Number(data.minMonthlyShifts) : null,
+        maxMonthlyShifts: data.maxMonthlyShifts ? Number(data.maxMonthlyShifts) : null,
       },
     });
     revalidatePath("/dashboard/employees");
@@ -70,6 +79,9 @@ export async function updateEmployeeAction(
       phone: formData.get("phone") ?? "",
       departmentId: formData.get("departmentId") ?? "",
       hourlyRate: formData.get("hourlyRate") ?? "",
+      hireDate: formData.get("hireDate") ?? "",
+      minMonthlyShifts: formData.get("minMonthlyShifts") ?? "",
+      maxMonthlyShifts: formData.get("maxMonthlyShifts") ?? "",
     });
 
     const isActive = formData.get("isActive") === "on";
@@ -81,6 +93,9 @@ export async function updateEmployeeAction(
         phone: data.phone || null,
         departmentId: data.departmentId || null,
         hourlyRate: data.hourlyRate ? data.hourlyRate : null,
+        hireDate: data.hireDate ? new Date(data.hireDate) : null,
+        minMonthlyShifts: data.minMonthlyShifts ? Number(data.minMonthlyShifts) : null,
+        maxMonthlyShifts: data.maxMonthlyShifts ? Number(data.maxMonthlyShifts) : null,
         isActive,
       },
     });
@@ -190,6 +205,7 @@ const shiftSchema = z.object({
   name: z.string().min(1),
   startTime: z.string().min(1),
   endTime: z.string().min(1),
+  requiredHeadcount: z.coerce.number().int().min(1).max(20).optional(),
 });
 
 export async function createShiftAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -201,6 +217,7 @@ export async function createShiftAction(_prev: FormState, formData: FormData): P
       name: formData.get("name"),
       startTime: formData.get("startTime"),
       endTime: formData.get("endTime"),
+      requiredHeadcount: formData.get("requiredHeadcount") ?? 1,
     });
     const dup = await prisma.shift.findUnique({
       where: { companyId_code: { companyId: scope.companyId, code: data.code } },
@@ -213,6 +230,7 @@ export async function createShiftAction(_prev: FormState, formData: FormData): P
         name: data.name,
         startTime: data.startTime,
         endTime: data.endTime,
+        requiredHeadcount: data.requiredHeadcount ?? 1,
       },
     });
     revalidatePath("/dashboard/schedule");
@@ -499,7 +517,7 @@ export async function saveEmployeePreferencesAction(
   }
 }
 
-/** 自動排班：依偏好、請假、門市產生未來 N 天班表 */
+/** 自動排班：條件約束排班（整月） */
 export async function autoGenerateScheduleAction(
   _prev: FormState,
   formData: FormData,
@@ -508,16 +526,19 @@ export async function autoGenerateScheduleAction(
     const actor = await requirePermission("schedule.manage");
     const scope = companyScope(actor);
     const storeId = String(formData.get("storeId") ?? "");
-    const days = Math.min(28, Math.max(1, Number(formData.get("days") ?? 14)));
+    const now = new Date();
+    const year = Number(formData.get("year") ?? now.getFullYear());
+    const month = Number(formData.get("month") ?? now.getMonth() + 1);
     const minPerShift = Math.min(5, Math.max(1, Number(formData.get("minPerShift") ?? 1)));
     const clearExisting = formData.get("clearExisting") === "on";
 
     if (!storeId) throw new BusinessRuleError("請選擇門市");
+    if (month < 1 || month > 12) throw new BusinessRuleError("月份無效");
     assertStoreAccess(actor, storeId);
 
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(startDate.getTime() + days * 86400000);
+    const startDate = new Date(year, month - 1, 1);
+    const days = new Date(year, month, 0).getDate();
+    const endDate = new Date(year, month - 1, days, 23, 59, 59);
 
     const [employees, shifts, preferences, existing, leaves] = await Promise.all([
       prisma.employee.findMany({ where: { ...scope, deletedAt: null } }),
@@ -541,8 +562,8 @@ export async function autoGenerateScheduleAction(
       }),
     ]);
 
-    const { generateAutoSchedulePlan } = await import("./auto-schedule");
-    const plan = generateAutoSchedulePlan({
+    const { generateAutoScheduleResult } = await import("./auto-schedule");
+    const { plan, report, reportText } = generateAutoScheduleResult({
       employees,
       shifts,
       preferences,
@@ -557,7 +578,7 @@ export async function autoGenerateScheduleAction(
     if (plan.length === 0) {
       return {
         ok: false,
-        message: "無法產生排班：請確認員工可排班偏好、班別與人力設定。",
+        message: `無法產生排班：${reportText}`,
       };
     }
 
@@ -596,12 +617,24 @@ export async function autoGenerateScheduleAction(
         action: "AUTO_SCHEDULE",
         entityType: "Schedule",
         entityId: storeId,
-        after: { count: plan.length, days, minPerShift, clearExisting },
+        after: {
+          count: plan.length,
+          year,
+          month,
+          minPerShift,
+          clearExisting,
+          reportSummary: report.summary,
+          validations: report.validations,
+          conflicts: report.conflicts,
+        },
       });
     });
 
     revalidatePath("/dashboard/schedule");
-    return { ok: true, message: `已自動產生 ${plan.length} 筆排班（未來 ${days} 天）` };
+    return {
+      ok: report.validations.every((v) => v.status !== "fail"),
+      message: `已產生 ${year} 年 ${month} 月共 ${plan.length} 筆排班。\n\n${reportText}`,
+    };
   } catch (err) {
     return toFormError(err);
   }

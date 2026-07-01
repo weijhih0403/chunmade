@@ -38,6 +38,9 @@ export default async function EditEmployeePage({
               phone: employee.phone,
               departmentId: employee.departmentId,
               hourlyRate: employee.hourlyRate?.toString() ?? "",
+              hireDate: employee.hireDate?.toISOString().slice(0, 10) ?? "",
+              minMonthlyShifts: employee.minMonthlyShifts,
+              maxMonthlyShifts: employee.maxMonthlyShifts,
               isActive: employee.isActive,
             }}
           />

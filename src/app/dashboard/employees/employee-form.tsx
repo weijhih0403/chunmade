@@ -15,6 +15,9 @@ export type EmployeeDefaults = {
   phone?: string | null;
   departmentId?: string | null;
   hourlyRate?: string | null;
+  hireDate?: string | null;
+  minMonthlyShifts?: number | null;
+  maxMonthlyShifts?: number | null;
   isActive: boolean;
 };
 
@@ -66,6 +69,35 @@ export function EmployeeForm({
             </option>
           ))}
         </Select>
+      </div>
+      <div className="w-full sm:w-auto">
+        <label className="mb-1 block text-xs text-gray-500">入職日期</label>
+        <Input
+          name="hireDate"
+          type="date"
+          defaultValue={defaults?.hireDate ?? ""}
+          className="w-full sm:w-40"
+        />
+      </div>
+      <div className="w-full sm:w-auto">
+        <label className="mb-1 block text-xs text-gray-500">每月最少班數</label>
+        <Input
+          name="minMonthlyShifts"
+          type="number"
+          min={0}
+          defaultValue={defaults?.minMonthlyShifts ?? ""}
+          className="w-full sm:w-24"
+        />
+      </div>
+      <div className="w-full sm:w-auto">
+        <label className="mb-1 block text-xs text-gray-500">每月最多班數</label>
+        <Input
+          name="maxMonthlyShifts"
+          type="number"
+          min={1}
+          defaultValue={defaults?.maxMonthlyShifts ?? ""}
+          className="w-full sm:w-24"
+        />
       </div>
       <div className="w-full sm:w-auto">
         <label className="mb-1 block text-xs text-gray-500">時薪</label>

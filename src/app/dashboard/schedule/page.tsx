@@ -22,7 +22,7 @@ export default async function SchedulePage() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="排班" description="未來兩週班表；可手動排班或使用自動排班" />
+      <PageHeader title="排班" description="月排班表；可手動排班或使用條件約束自動排班" />
 
       {canManage && (
         <div className="space-y-3">
@@ -43,7 +43,7 @@ export default async function SchedulePage() {
               <div className="flex flex-wrap gap-2">
                 {shifts.map((s) => (
                   <Badge key={s.id} color="blue">
-                    {s.name} {s.startTime}-{s.endTime}
+                    {s.name} {s.startTime}-{s.endTime}（{s.requiredHeadcount ?? 1}人）
                   </Badge>
                 ))}
               </div>

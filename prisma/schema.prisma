@@ -494,6 +494,8 @@ model Employee {
   employmentTypeId String?
   primaryStoreId   String?
   hireDate         DateTime?
+  minMonthlyShifts Int?
+  maxMonthlyShifts Int?
   hourlyRate       Decimal?  @db.Decimal(18, 4)
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now())
@@ -522,8 +524,9 @@ model Shift {
   code      String
   name      String // 早班 / 午班 / 晚班
   startTime String // "08:00"
-  endTime   String // "16:00"
-  isActive  Boolean   @default(true)
+  endTime           String // "16:00"
+  requiredHeadcount Int      @default(1)
+  isActive          Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
