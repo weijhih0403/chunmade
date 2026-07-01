@@ -51,6 +51,7 @@ export async function createCountAction(formData: FormData) {
               itemId: it.id,
               systemQty: sys,
               countedQty: ZERO,
+              orderQty: ZERO,
               differenceQty: ZERO,
             };
           }),
@@ -117,14 +118,33 @@ export async function completeCountAction(formData: FormData) {
   await prisma.$transaction(async (tx) => {
     for (const ci of count.items) {
       const countedRaw = formData.get(`counted_${ci.itemId}`);
+      const orderRaw = formData.get(`order_${ci.itemId}`);
       const counted = toDecimal(
         countedRaw != null && countedRaw !== "" ? String(countedRaw) : "0",
       );
-      const diff = sub(counted, ci.systemQty);
+      const orderQty = toDecimal(
+        orderRaw != null && orderRaw !== "" ? String(orderRaw) : "0",
+      );
+
+      const balance = await tx.stockBalance.aggregate({
+        where: {
+          companyId: scope.companyId,
+          warehouseId: count.warehouseId,
+          itemId: ci.itemId,
+        },
+        _sum: { quantity: true },
+      });
+      const currentQty = toDecimal(balance._sum.quantity ?? 0);
+      const diff = sub(counted, currentQty);
 
       await tx.stockCountItem.update({
         where: { id: ci.id },
-        data: { countedQty: counted, differenceQty: diff },
+        data: {
+          countedQty: counted,
+          orderQty,
+          systemQty: currentQty,
+          differenceQty: diff,
+        },
       });
 
       if (!eq(diff, 0)) {

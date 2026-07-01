@@ -29,7 +29,11 @@ export default async function CountDetailPage({
 
       <PageHeader
         title={`盤點單 ${count.countNo}`}
-        description={editable ? "輸入實盤數量後送出，系統會自動產生差異調整" : "盤點已完成"}
+        description={
+          editable
+            ? "輸入各品項實盤數量與要叫的貨數量，送出後系統依實盤調整該店庫存"
+            : "盤點已完成"
+        }
         action={<Badge color={editable ? "amber" : "green"}>{editable ? "盤點中" : "已完成"}</Badge>}
       />
 
@@ -39,9 +43,8 @@ export default async function CountDetailPage({
           <THead>
             <tr>
               <TH>商品</TH>
-              <TH className="text-right">系統數量</TH>
               <TH className="text-right">實盤數量</TH>
-              <TH className="text-right">差異</TH>
+              <TH className="text-right">要叫的貨</TH>
             </tr>
           </THead>
           <tbody>
@@ -51,7 +54,6 @@ export default async function CountDetailPage({
                   {r.itemName}
                   <span className="ml-1 text-xs text-gray-400">{r.unit}</span>
                 </TD>
-                <TD className="text-right">{r.systemQty.toString()}</TD>
                 <TD className="text-right">
                   {editable ? (
                     <CountQtyInput
@@ -59,21 +61,24 @@ export default async function CountDetailPage({
                       unit={r.unit}
                       unitCode={r.unitCode}
                       defaultValue="0"
+                      ariaLabel={`${r.itemName} 實盤數量`}
                     />
                   ) : (
                     r.countedQty.toString()
                   )}
                 </TD>
-                <TD
-                  className={`text-right ${
-                    r.differenceQty.greaterThan(0)
-                      ? "text-green-600"
-                      : r.differenceQty.lessThan(0)
-                        ? "text-red-600"
-                        : "text-gray-400"
-                  }`}
-                >
-                  {r.differenceQty.toString()}
+                <TD className="text-right">
+                  {editable ? (
+                    <CountQtyInput
+                      name={`order_${r.itemId}`}
+                      unit={r.unit}
+                      unitCode={r.unitCode}
+                      defaultValue="0"
+                      ariaLabel={`${r.itemName} 要叫的貨`}
+                    />
+                  ) : (
+                    r.orderQty.toString()
+                  )}
                 </TD>
               </TR>
             ))}
@@ -82,7 +87,7 @@ export default async function CountDetailPage({
 
         {editable && (
           <div className="mt-4">
-            <SubmitButton pendingText="處理中…">完成盤點並產生差異調整</SubmitButton>
+            <SubmitButton pendingText="處理中…">完成盤點</SubmitButton>
           </div>
         )}
       </form>

@@ -247,6 +247,8 @@ async function main() {
   const uCup = await unit("cup", "杯");
   const uPcs = await unit("pcs", "個");
   const uBag = await unit("bag", "包");
+  const uBottle = await unit("bottle", "瓶");
+  const uPot = await unit("pot", "鍋");
 
   await prisma.unitConversion.createMany({
     data: [
@@ -289,10 +291,10 @@ async function main() {
     { sku: "RAW-WATER", name: "水", type: "RAW_MATERIAL", unitId: uMl.id, categoryId: catRaw.id, cost: 0.001, track: false },
     { sku: "PACK-CUP", name: "外帶杯", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 1.5, reorder: 500, safety: 200 },
     { sku: "PACK-LID", name: "杯蓋", type: "RAW_MATERIAL", unitId: uPcs.id, categoryId: catPack.id, cost: 0.8, reorder: 500, safety: 200 },
-    { sku: "SEMI-SOYMILK", name: "豆漿(半成品)", type: "SEMI_FINISHED", unitId: uMl.id, categoryId: catRaw.id, cost: 0, shelfLife: 2 },
+    { sku: "SEMI-SOYMILK", name: "豆漿(半成品)", type: "SEMI_FINISHED", unitId: uBottle.id, categoryId: catRaw.id, cost: 0, shelfLife: 2 },
     { sku: "SEMI-SYRUP", name: "糖水(半成品)", type: "SEMI_FINISHED", unitId: uMl.id, categoryId: catRaw.id, cost: 0, shelfLife: 7 },
     { sku: "FG-TOFU", name: "傳統豆花", type: "FINISHED_GOOD", unitId: uCup.id, categoryId: catDessert.id, price: 45, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
-    { sku: "SALE-SOYMILK", name: "古早味豆漿", type: "SALE_ITEM", unitId: uCup.id, categoryId: catDrink.id, price: 35, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
+    { sku: "SALE-SOYMILK", name: "古早味豆漿", type: "SALE_ITEM", unitId: uBottle.id, categoryId: catDrink.id, price: 35, cost: 0, shelfLife: 1, reorder: 20, safety: 10 },
     // 配料 / 原料（批次匯入）
     ...[
       "芋圓", "地瓜圓", "紫地瓜", "Q圓", "湯圓", "粉圓", "粉條", "粉角",
@@ -305,8 +307,8 @@ async function main() {
       sku: `ING-${String(idx + 1).padStart(3, "0")}`,
       name,
       type: "RAW_MATERIAL" as const,
-      // 原物料一律以「包」計數
-      unitId: uBag.id,
+      // 原物料多數以「包」計數；粉粿以「鍋」
+      unitId: name === "粉粿" ? uPot.id : uBag.id,
       categoryId: catRaw.id,
     })),
   ];

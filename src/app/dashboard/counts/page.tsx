@@ -32,10 +32,10 @@ export default async function CountsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="庫存盤點" description="建立盤點單後輸入實盤數量，系統依差異產生盤盈 / 盤虧（僅含原物料與半成品）" />
+      <PageHeader title="庫存盤點" description="各門市盤點實際庫存與叫貨數量（僅含原物料與半成品）" />
 
       {completed === "1" && (
-        <SuccessBanner message="盤點已完成，庫存已依實盤數量調整。" />
+        <SuccessBanner message="盤點已完成，庫存已依實盤數量更新。" />
       )}
 
       <Card>

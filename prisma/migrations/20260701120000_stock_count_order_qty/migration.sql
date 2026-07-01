@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "StockCountItem" ADD COLUMN "orderQty" DECIMAL(18,4) NOT NULL DEFAULT 0;

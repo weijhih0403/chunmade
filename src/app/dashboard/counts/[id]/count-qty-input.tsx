@@ -3,8 +3,17 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-function isBagUnit(unit: string, unitCode?: string) {
-  return unit === "包" || unitCode === "bag";
+function isStepUnit(unit: string, unitCode?: string) {
+  return (
+    unit === "包" ||
+    unit === "瓶" ||
+    unit === "個" ||
+    unit === "鍋" ||
+    unitCode === "bag" ||
+    unitCode === "bottle" ||
+    unitCode === "pcs" ||
+    unitCode === "pot"
+  );
 }
 
 export function CountQtyInput({
@@ -12,20 +21,23 @@ export function CountQtyInput({
   unit,
   unitCode,
   defaultValue = "0",
+  ariaLabel,
 }: {
   name: string;
   unit: string;
   unitCode?: string;
   defaultValue?: string;
+  ariaLabel?: string;
 }) {
-  const bag = isBagUnit(unit, unitCode);
+  const step = isStepUnit(unit, unitCode);
   const [value, setValue] = useState(() => {
-    if (bag) return String(Math.max(0, Math.floor(Number(defaultValue) || 0)));
+    if (step) return String(Math.max(0, Math.floor(Number(defaultValue) || 0)));
     return defaultValue;
   });
 
-  if (bag) {
+  if (step) {
     const qty = Math.max(0, Math.floor(Number(value) || 0));
+    const unitLabel = unit || "數量";
     return (
       <div className="inline-flex items-center justify-end gap-1">
         <Button
@@ -33,7 +45,7 @@ export function CountQtyInput({
           variant="outline"
           size="sm"
           className="h-9 w-9 shrink-0 px-0"
-          aria-label="減少 1 包"
+          aria-label={`減少 1 ${unitLabel}`}
           onClick={() => setValue(String(Math.max(0, qty - 1)))}
         >
           −
@@ -45,7 +57,7 @@ export function CountQtyInput({
           variant="outline"
           size="sm"
           className="h-9 w-9 shrink-0 px-0"
-          aria-label="增加 1 包"
+          aria-label={`增加 1 ${unitLabel}`}
           onClick={() => setValue(String(qty + 1))}
         >
           +
@@ -62,6 +74,7 @@ export function CountQtyInput({
       min="0"
       value={value}
       onChange={(e) => setValue(e.target.value)}
+      aria-label={ariaLabel}
       className="h-9 w-28 rounded border border-gray-300 px-2 text-right"
     />
   );
