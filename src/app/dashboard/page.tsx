@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireActor } from "@/lib/permissions";
 import { getDashboardStats } from "@/modules/reports/dashboard-service";
 import { formatTWD } from "@/lib/money";
@@ -10,25 +11,35 @@ function StatCard({
   value,
   hint,
   highlight,
+  href,
 }: {
   label: string;
   value: string;
   hint?: string;
   highlight?: boolean;
+  href?: string;
 }) {
-  return (
-    <Card>
-      <CardContent>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p
-          className={`mt-1 text-2xl font-bold ${highlight ? "text-amber-700" : "text-gray-900"}`}
-        >
-          {value}
-        </p>
-        {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
-      </CardContent>
-    </Card>
+  const inner = (
+    <CardContent>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p
+        className={`mt-1 text-2xl font-bold ${highlight ? "text-amber-700" : "text-gray-900"}`}
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-1 text-xs text-gray-400">{hint}</p>}
+    </CardContent>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block transition hover:opacity-90">
+        <Card className="h-full cursor-pointer hover:border-amber-200">{inner}</Card>
+      </Link>
+    );
+  }
+
+  return <Card>{inner}</Card>;
 }
 
 export default async function DashboardPage() {
@@ -52,14 +63,14 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="今日營業額" value={formatTWD(stats.todayRevenue)} highlight />
+        <StatCard label="今日營業額" value={formatTWD(stats.todayRevenue)} highlight href="/dashboard/pos-orders" />
         <StatCard label="今日訂單數" value={`${stats.todayOrderCount} 筆`} />
         <StatCard label="平均客單價" value={formatTWD(stats.avgOrderValue)} />
         <StatCard label="今日毛利" value={formatTWD(stats.todayGrossProfit)} />
         <StatCard label="本月營收" value={formatTWD(stats.monthRevenue)} />
-        <StatCard label="低庫存品項" value={`${stats.lowStockCount} 項`} hint="低於補貨點" />
-        <StatCard label="待收貨採購單" value={`${stats.pendingPurchaseCount} 張`} />
-        <StatCard label="待完成生產單" value={`${stats.pendingProductionCount} 張`} />
+        <StatCard label="低庫存品項" value={`${stats.lowStockCount} 項`} hint="低於補貨點" href="/dashboard/inventory" />
+        <StatCard label="待收貨採購單" value={`${stats.pendingPurchaseCount} 張`} href="/dashboard/purchases" />
+        <StatCard label="待完成生產單" value={`${stats.pendingProductionCount} 張`} href="/dashboard/production" />
       </div>
 
       {stats.pendingUserCount > 0 && actor.permissions.has("user.approve") && (

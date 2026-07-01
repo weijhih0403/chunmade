@@ -25,7 +25,12 @@ export async function createCountAction(formData: FormData) {
     qtyByItem.set(b.itemId, add(qtyByItem.get(b.itemId) ?? ZERO, b.quantity));
   }
   const items = await prisma.item.findMany({
-    where: { ...scope, deletedAt: null, trackStock: true },
+    where: {
+      ...scope,
+      deletedAt: null,
+      trackStock: true,
+      type: { in: ["RAW_MATERIAL", "SEMI_FINISHED"] },
+    },
     select: { id: true },
   });
 
@@ -154,4 +159,5 @@ export async function completeCountAction(formData: FormData) {
 
   revalidatePath(`/dashboard/counts/${countId}`);
   revalidatePath("/dashboard/inventory");
+  redirect("/dashboard/counts?completed=1");
 }

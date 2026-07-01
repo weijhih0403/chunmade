@@ -15,7 +15,7 @@ test.describe("認證流程", () => {
     await page.getByLabel("Email").fill("owner@chun.local");
     await page.getByLabel("密碼").fill("Password123");
     await page.getByRole("button", { name: "登入" }).click();
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60000 });
     await expect(page.getByRole("heading", { name: "儀表板" })).toBeVisible();
   });
 

@@ -14,6 +14,7 @@ export default async function ItemsPage() {
   const items = await listItems(actor, {
     types: ["FINISHED_GOOD", "SALE_ITEM", "SERVICE"],
   });
+  const rows = items.items;
   const canManage = actor.permissions.has("catalog.manage");
 
   return (
@@ -30,7 +31,7 @@ export default async function ItemsPage() {
         }
       />
 
-      {items.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState message="尚無商品，請先新增。" />
       ) : (
         <Table>
@@ -48,7 +49,7 @@ export default async function ItemsPage() {
             </tr>
           </THead>
           <tbody>
-            {items.map((it) => (
+            {rows.map((it) => (
               <TR key={it.id}>
                 <TD className="font-mono text-xs">{it.sku}</TD>
                 <TD className="font-medium text-gray-900">{it.name}</TD>

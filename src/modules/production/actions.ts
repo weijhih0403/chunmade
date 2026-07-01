@@ -61,6 +61,73 @@ export async function createRecipeAction(_prev: FormState, formData: FormData): 
   }
 }
 
+export async function updateRecipeAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const actor = await requirePermission("production.manage");
+    const scope = companyScope(actor);
+    const id = String(formData.get("id") ?? "");
+    const lines = JSON.parse(String(formData.get("lines") ?? "[]"));
+
+    const recipe = await prisma.recipe.findFirst({ where: { ...scope, id, deletedAt: null } });
+    if (!recipe) throw new NotFoundError("找不到配方");
+
+    const data = recipeSchema.parse({
+      productId: recipe.productId,
+      name: formData.get("name"),
+      outputQty: formData.get("outputQty"),
+      lines,
+    });
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipe.update({ where: { id }, data: { name: data.name } });
+
+      const latest = await tx.recipeVersion.findFirst({
+        where: { recipeId: id },
+        orderBy: { version: "desc" },
+      });
+      const nextVersion = (latest?.version ?? 0) + 1;
+
+      await tx.recipeVersion.updateMany({
+        where: { recipeId: id, isActive: true },
+        data: { isActive: false },
+      });
+
+      await tx.recipeVersion.create({
+        data: {
+          companyId: scope.companyId,
+          recipeId: id,
+          version: nextVersion,
+          outputQty: toDecimal(data.outputQty),
+          createdBy: actor.id,
+          items: {
+            create: data.lines.map((l) => ({
+              companyId: scope.companyId,
+              materialId: l.materialId,
+              quantity: toDecimal(l.quantity),
+              wasteRate: toDecimal(l.wasteRate),
+            })),
+          },
+        },
+      });
+
+      await writeAudit(tx, {
+        companyId: scope.companyId,
+        userId: actor.id,
+        action: "UPDATE",
+        entityType: "Recipe",
+        entityId: id,
+        after: { name: data.name, version: nextVersion },
+      });
+    });
+
+    revalidatePath("/dashboard/recipes");
+    revalidatePath(`/dashboard/recipes/${id}`);
+    return { ok: true, message: `配方「${data.name}」已更新（新版本）` };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
 export async function createProductionOrderAction(
   _prev: FormState,
   formData: FormData,

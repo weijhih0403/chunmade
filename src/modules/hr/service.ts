@@ -11,6 +11,14 @@ export async function listEmployees(actor: Actor) {
   });
 }
 
+export async function getEmployee(actor: Actor, id: string) {
+  const scope = companyScope(actor);
+  return prisma.employee.findFirst({
+    where: { ...scope, id, deletedAt: null },
+    include: { department: true },
+  });
+}
+
 export async function listDepartments(actor: Actor) {
   const scope = companyScope(actor);
   return prisma.department.findMany({ where: { ...scope, deletedAt: null }, orderBy: { name: "asc" } });

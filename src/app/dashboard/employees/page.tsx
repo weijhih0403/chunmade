@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listEmployees, listDepartments } from "@/modules/hr/service";
 import { PageHeader } from "@/components/layout/page-header";
@@ -38,6 +39,7 @@ export default async function EmployeesPage() {
               <TH>部門</TH>
               <TH>電話</TH>
               <TH>狀態</TH>
+              {canManage && <TH></TH>}
             </tr>
           </THead>
           <tbody>
@@ -48,6 +50,16 @@ export default async function EmployeesPage() {
                 <TD>{e.department?.name ?? "—"}</TD>
                 <TD>{e.phone ?? "—"}</TD>
                 <TD>{e.isActive ? <Badge color="green">在職</Badge> : <Badge>停用</Badge>}</TD>
+                {canManage && (
+                  <TD>
+                    <Link
+                      href={`/dashboard/employees/${e.id}/edit`}
+                      className="text-amber-700 hover:underline"
+                    >
+                      編輯
+                    </Link>
+                  </TD>
+                )}
               </TR>
             ))}
           </tbody>

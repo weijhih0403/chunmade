@@ -52,6 +52,45 @@ export async function createEmployeeAction(
   }
 }
 
+export async function updateEmployeeAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requirePermission("employee.manage");
+    const scope = companyScope(actor);
+    const id = String(formData.get("id") ?? "");
+    const existing = await prisma.employee.findFirst({ where: { ...scope, id, deletedAt: null } });
+    if (!existing) throw new NotFoundError("找不到員工");
+
+    const data = employeeSchema.parse({
+      employeeNo: existing.employeeNo,
+      name: formData.get("name"),
+      phone: formData.get("phone") ?? "",
+      departmentId: formData.get("departmentId") ?? "",
+      hourlyRate: formData.get("hourlyRate") ?? "",
+    });
+
+    const isActive = formData.get("isActive") === "on";
+
+    await prisma.employee.update({
+      where: { id },
+      data: {
+        name: data.name,
+        phone: data.phone || null,
+        departmentId: data.departmentId || null,
+        hourlyRate: data.hourlyRate ? data.hourlyRate : null,
+        isActive,
+      },
+    });
+    revalidatePath("/dashboard/employees");
+    revalidatePath(`/dashboard/employees/${id}/edit`);
+    return { ok: true, message: `員工「${data.name}」已更新` };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
 const shiftSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),

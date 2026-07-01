@@ -10,10 +10,14 @@ export const dynamic = "force-dynamic";
 
 export default async function EditItemPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
+  const fromMaterials = from === "materials";
   const actor = await requirePermission("catalog.manage");
   const [item, { categories, units }] = await Promise.all([
     getItem(actor, id),
@@ -23,11 +27,12 @@ export default async function EditItemPage({
 
   return (
     <div className="space-y-4">
-      <BackButton fallbackHref="/dashboard/items" />
-      <PageHeader title={`編輯商品 - ${item.name}`} description={`SKU：${item.sku}`} />
+      <BackButton fallbackHref={fromMaterials ? "/dashboard/materials" : "/dashboard/items"} />
+      <PageHeader title={`編輯 - ${item.name}`} description={`SKU：${item.sku}`} />
       <ItemForm
         action={updateItemAction}
         submitLabel="儲存變更"
+        returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}
         defaults={{

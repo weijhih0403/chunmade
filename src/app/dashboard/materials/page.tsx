@@ -9,19 +9,33 @@ import { ITEM_TYPE_LABELS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 50;
+
 export default async function MaterialsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, page: pageRaw } = await searchParams;
   const search = q?.trim() || undefined;
+  const page = Math.max(1, Number(pageRaw) || 1);
   const actor = await requirePermission("catalog.read");
-  const items = await listItems(actor, {
+  const { items, total, pageSize } = await listItems(actor, {
     types: ["RAW_MATERIAL", "SEMI_FINISHED"],
     search,
+    page,
+    pageSize: PAGE_SIZE,
   });
   const canManage = actor.permissions.has("catalog.manage");
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  function pageHref(p: number) {
+    const params = new URLSearchParams();
+    if (search) params.set("q", search);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/dashboard/materials${qs ? `?${qs}` : ""}`;
+  }
 
   return (
     <div>
@@ -51,7 +65,7 @@ export default async function MaterialsPage({
               )}
             </form>
             {canManage && (
-              <Link href="/dashboard/items/new">
+              <Link href="/dashboard/items/new?from=materials">
                 <Button>新增原物料</Button>
               </Link>
             )}
@@ -59,52 +73,78 @@ export default async function MaterialsPage({
         }
       />
 
+      {total > 0 && (
+        <p className="mb-3 text-sm text-gray-500">
+          共 {total} 筆，第 {page} / {totalPages} 頁
+        </p>
+      )}
+
       {items.length === 0 ? (
         <EmptyState message={search ? `找不到符合「${search}」的原物料。` : "尚無原物料，請先新增。"} />
       ) : (
-        <Table>
-          <THead>
-            <tr>
-              <TH>SKU</TH>
-              <TH>名稱</TH>
-              <TH>類型</TH>
-              <TH>分類</TH>
-              <TH>單位</TH>
-              <TH className="text-right">售價</TH>
-              <TH className="text-right">標準成本</TH>
-              <TH>庫管</TH>
-              {canManage && <TH></TH>}
-            </tr>
-          </THead>
-          <tbody>
-            {items.map((it) => (
-              <TR key={it.id}>
-                <TD className="font-mono text-xs">{it.sku}</TD>
-                <TD className="font-medium text-gray-900">{it.name}</TD>
-                <TD>
-                  <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
-                </TD>
-                <TD>{it.category?.name ?? "—"}</TD>
-                <TD>{it.baseUnit.name}</TD>
-                <TD className="text-right">{formatTWD(it.price)}</TD>
-                <TD className="text-right">{formatTWD(it.standardCost)}</TD>
-                <TD>
-                  {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
-                </TD>
-                {canManage && (
+        <>
+          <Table>
+            <THead>
+              <tr>
+                <TH>SKU</TH>
+                <TH>名稱</TH>
+                <TH>類型</TH>
+                <TH>分類</TH>
+                <TH>單位</TH>
+                <TH className="text-right">售價</TH>
+                <TH className="text-right">標準成本</TH>
+                <TH>庫管</TH>
+                {canManage && <TH></TH>}
+              </tr>
+            </THead>
+            <tbody>
+              {items.map((it) => (
+                <TR key={it.id}>
+                  <TD className="font-mono text-xs">{it.sku}</TD>
+                  <TD className="font-medium text-gray-900">{it.name}</TD>
                   <TD>
-                    <Link
-                      href={`/dashboard/items/${it.id}/edit`}
-                      className="text-amber-700 hover:underline"
-                    >
-                      編輯
-                    </Link>
+                    <Badge color="blue">{ITEM_TYPE_LABELS[it.type]}</Badge>
                   </TD>
-                )}
-              </TR>
-            ))}
-          </tbody>
-        </Table>
+                  <TD>{it.category?.name ?? "—"}</TD>
+                  <TD>{it.baseUnit.name}</TD>
+                  <TD className="text-right">{formatTWD(it.price)}</TD>
+                  <TD className="text-right">{formatTWD(it.standardCost)}</TD>
+                  <TD>
+                    {it.trackStock ? <Badge color="green">管理</Badge> : <Badge>不管理</Badge>}
+                  </TD>
+                  {canManage && (
+                    <TD>
+                      <Link
+                        href={`/dashboard/items/${it.id}/edit?from=materials`}
+                        className="text-amber-700 hover:underline"
+                      >
+                        編輯
+                      </Link>
+                    </TD>
+                  )}
+                </TR>
+              ))}
+            </tbody>
+          </Table>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {page > 1 && (
+                <Link href={pageHref(page - 1)} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
+                  ← 上一頁
+                </Link>
+              )}
+              <span className="text-sm text-gray-500">
+                {page} / {totalPages}
+              </span>
+              {page < totalPages && (
+                <Link href={pageHref(page + 1)} className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
+                  下一頁 →
+                </Link>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

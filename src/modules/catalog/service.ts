@@ -5,29 +5,45 @@ import { type Actor, companyScope } from "@/lib/permissions";
 
 export async function listItems(
   actor: Actor,
-  filters?: { type?: ItemType; types?: ItemType[]; search?: string },
+  filters?: {
+    type?: ItemType;
+    types?: ItemType[];
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  },
 ) {
   const scope = companyScope(actor);
-  return prisma.item.findMany({
-    where: {
-      ...scope,
-      deletedAt: null,
-      ...(filters?.type ? { type: filters.type } : {}),
-      ...(filters?.types ? { type: { in: filters.types } } : {}),
-      ...(filters?.search
-        ? {
-            OR: [
-              { name: { contains: filters.search, mode: "insensitive" } },
-              { sku: { contains: filters.search, mode: "insensitive" } },
-              { barcode: { contains: filters.search } },
-            ],
-          }
-        : {}),
-    },
-    include: { category: true, baseUnit: true },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 50));
+  const where = {
+    ...scope,
+    deletedAt: null,
+    ...(filters?.type ? { type: filters.type } : {}),
+    ...(filters?.types ? { type: { in: filters.types } } : {}),
+    ...(filters?.search
+      ? {
+          OR: [
+            { name: { contains: filters.search, mode: "insensitive" as const } },
+            { sku: { contains: filters.search, mode: "insensitive" as const } },
+            { barcode: { contains: filters.search } },
+          ],
+        }
+      : {}),
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      include: { category: true, baseUnit: true },
+      orderBy: { name: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.item.count({ where }),
+  ]);
+
+  return { items, total, page, pageSize };
 }
 
 export async function getItem(actor: Actor, id: string) {

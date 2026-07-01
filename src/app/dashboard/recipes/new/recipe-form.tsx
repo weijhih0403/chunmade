@@ -2,25 +2,52 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createRecipeAction } from "@/modules/production/actions";
+import { createRecipeAction, updateRecipeAction } from "@/modules/production/actions";
 import { initialFormState } from "@/lib/forms";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 type Opt = { id: string; name: string };
 type Line = { materialId: string; quantity: number; wasteRate: number };
 
-export function RecipeForm({ products, materials }: { products: Opt[]; materials: Opt[] }) {
-  const [state, action, pending] = useActionState(createRecipeAction, initialFormState);
-  const [lines, setLines] = useState<Line[]>([{ materialId: "", quantity: 1, wasteRate: 0 }]);
+export type RecipeDefaults = {
+  id: string;
+  productId: string;
+  name: string;
+  outputQty: string;
+  lines: Line[];
+};
+
+export function RecipeForm({
+  products,
+  materials,
+  defaults,
+}: {
+  products: Opt[];
+  materials: Opt[];
+  defaults?: RecipeDefaults;
+}) {
+  const isEdit = Boolean(defaults?.id);
+  const [state, action, pending] = useActionState(
+    isEdit ? updateRecipeAction : createRecipeAction,
+    initialFormState,
+  );
+  const [lines, setLines] = useState<Line[]>(
+    defaults?.lines?.length ? defaults.lines : [{ materialId: "", quantity: 1, wasteRate: 0 }],
+  );
   const router = useRouter();
 
   useEffect(() => {
-    if (state.ok) {
+    if (state.ok && !isEdit) {
       const t = setTimeout(() => router.push("/dashboard/recipes"), 800);
       return () => clearTimeout(t);
     }
-  }, [state.ok, router]);
+    if (state.ok && isEdit) {
+      const t = setTimeout(() => router.push(`/dashboard/recipes/${defaults!.id}`), 800);
+      return () => clearTimeout(t);
+    }
+  }, [state.ok, router, isEdit, defaults?.id]);
 
   function update(idx: number, patch: Partial<Line>) {
     setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
@@ -28,29 +55,45 @@ export function RecipeForm({ products, materials }: { products: Opt[]; materials
 
   return (
     <form action={action} className="max-w-3xl space-y-4">
+      {isEdit && <input type="hidden" name="id" value={defaults!.id} />}
       <input type="hidden" name="lines" value={JSON.stringify(lines.filter((l) => l.materialId))} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label>產出品項（成品 / 半成品）</Label>
-          <Select name="productId" required defaultValue="">
-            <option value="" disabled>
-              請選擇
-            </option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
+          {isEdit ? (
+            <>
+              <input type="hidden" name="productId" value={defaults!.productId} />
+              <p className="mt-1 text-sm text-gray-700">
+                {products.find((p) => p.id === defaults!.productId)?.name ?? defaults!.productId}
+              </p>
+            </>
+          ) : (
+            <Select name="productId" required defaultValue="">
+              <option value="" disabled>
+                請選擇
               </option>
-            ))}
-          </Select>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          )}
         </div>
         <div>
           <Label>標準產量</Label>
-          <Input name="outputQty" type="number" step="0.0001" defaultValue="1" required />
+          <Input
+            name="outputQty"
+            type="number"
+            step="0.0001"
+            defaultValue={defaults?.outputQty ?? "1"}
+            required
+          />
         </div>
       </div>
       <div>
         <Label>配方名稱</Label>
-        <Input name="name" required />
+        <Input name="name" required defaultValue={defaults?.name} />
       </div>
 
       <div className="rounded-lg border border-gray-200">
@@ -63,17 +106,12 @@ export function RecipeForm({ products, materials }: { products: Opt[]; materials
         {lines.map((line, idx) => (
           <div key={idx} className="grid grid-cols-12 items-center gap-2 px-3 py-2">
             <div className="col-span-6">
-              <Select
-                value={line.materialId}
-                onChange={(e) => update(idx, { materialId: e.target.value })}
-              >
-                <option value="">請選擇</option>
-                {materials.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                options={materials}
+                defaultValue={line.materialId}
+                placeholder="搜尋原料…"
+                onSelect={(id) => update(idx, { materialId: id })}
+              />
             </div>
             <div className="col-span-3">
               <Input
@@ -128,7 +166,7 @@ export function RecipeForm({ products, materials }: { products: Opt[]; materials
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "建立中…" : "建立配方"}
+        {pending ? "儲存中…" : isEdit ? "儲存變更（新版本）" : "建立配方"}
       </Button>
     </form>
   );

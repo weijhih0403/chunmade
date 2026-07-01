@@ -3,9 +3,11 @@ import { requirePermission } from "@/lib/permissions";
 import { listCounts, listWarehouses } from "@/modules/inventory/service";
 import { createCountAction, deleteCountAction } from "@/modules/inventory/count-actions";
 import { PageHeader } from "@/components/layout/page-header";
+import { SuccessBanner } from "@/components/ui/success-banner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Select } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/dates";
 
@@ -18,14 +20,23 @@ const STATUS: Record<string, { label: string; color: "gray" | "amber" | "green" 
   CANCELLED: { label: "已取消", color: "red" },
 };
 
-export default async function CountsPage() {
+export default async function CountsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ completed?: string }>;
+}) {
+  const { completed } = await searchParams;
   const actor = await requirePermission("inventory.count");
   const [counts, warehouses] = await Promise.all([listCounts(actor), listWarehouses(actor)]);
   const whName = new Map(warehouses.map((w) => [w.id, w.name]));
 
   return (
     <div className="space-y-6">
-      <PageHeader title="庫存盤點" description="建立盤點單後輸入實盤數量，系統依差異產生盤盈 / 盤虧" />
+      <PageHeader title="庫存盤點" description="建立盤點單後輸入實盤數量，系統依差異產生盤盈 / 盤虧（僅含原物料與半成品）" />
+
+      {completed === "1" && (
+        <SuccessBanner message="盤點已完成，庫存已依實盤數量調整。" />
+      )}
 
       <Card>
         <CardHeader>
@@ -95,9 +106,14 @@ export default async function CountsPage() {
                     {c.status !== "COMPLETED" && (
                       <form action={deleteCountAction}>
                         <input type="hidden" name="countId" value={c.id} />
-                        <SubmitButton variant="ghost" size="sm" pendingText="刪除中…">
+                        <ConfirmSubmitButton
+                          variant="ghost"
+                          size="sm"
+                          pendingText="刪除中…"
+                          confirmMessage={`確定要刪除盤點單 ${c.countNo}？`}
+                        >
                           <span className="text-red-600">刪除</span>
-                        </SubmitButton>
+                        </ConfirmSubmitButton>
                       </form>
                     )}
                   </div>

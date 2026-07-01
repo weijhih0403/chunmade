@@ -5,6 +5,7 @@ import { transferAction } from "@/modules/inventory/actions";
 import { initialFormState } from "@/lib/forms";
 import { Button } from "@/components/ui/button";
 import { Label, Select, Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 type Opt = { id: string; name: string };
 
@@ -43,16 +44,7 @@ export function TransferForm({ warehouses, items }: { warehouses: Opt[]; items: 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label>商品</Label>
-          <Select name="itemId" required defaultValue="">
-            <option value="" disabled>
-              請選擇
-            </option>
-            {items.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </Select>
+          <SearchableSelect name="itemId" options={items} required placeholder="搜尋商品…" />
         </div>
         <div>
           <Label>數量</Label>

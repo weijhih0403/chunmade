@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requirePermission, companyScope } from "@/lib/permissions";
 import { writeAudit } from "@/lib/audit";
@@ -47,6 +48,42 @@ export async function createSupplierAction(
   }
 }
 
+export async function updateSupplierAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requirePermission("purchase.manage");
+    const scope = companyScope(actor);
+    const id = String(formData.get("id") ?? "");
+    const existing = await prisma.supplier.findFirst({ where: { ...scope, id, deletedAt: null } });
+    if (!existing) throw new NotFoundError("找不到供應商");
+
+    const data = supplierSchema.parse({
+      code: existing.code,
+      name: formData.get("name"),
+      contact: formData.get("contact") ?? "",
+      phone: formData.get("phone") ?? "",
+      email: formData.get("email") ?? "",
+    });
+
+    await prisma.supplier.update({
+      where: { id },
+      data: {
+        name: data.name,
+        contact: data.contact || null,
+        phone: data.phone || null,
+        email: data.email || null,
+      },
+    });
+    revalidatePath("/dashboard/suppliers");
+    revalidatePath(`/dashboard/suppliers/${id}/edit`);
+    return { ok: true, message: `供應商「${data.name}」已更新` };
+  } catch (err) {
+    return toFormError(err);
+  }
+}
+
 /** 刪除供應商：軟刪除（既有採購單仍保留參照） */
 export async function deleteSupplierAction(formData: FormData) {
   const actor = await requirePermission("purchase.manage");
@@ -74,6 +111,7 @@ export async function deleteSupplierAction(formData: FormData) {
   });
 
   revalidatePath("/dashboard/suppliers");
+  redirect("/dashboard/suppliers");
 }
 
 export async function createPurchaseOrderAction(

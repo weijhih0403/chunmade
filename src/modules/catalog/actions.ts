@@ -65,6 +65,7 @@ export async function createItemAction(_prev: FormState, formData: FormData): Pr
     });
 
     revalidatePath("/dashboard/items");
+    revalidatePath("/dashboard/materials");
     return { ok: true, message: `商品「${item.name}」已建立` };
   } catch (err) {
     return toFormError(err);
@@ -136,6 +137,7 @@ export async function updateItemAction(_prev: FormState, formData: FormData): Pr
     });
 
     revalidatePath("/dashboard/items");
+    revalidatePath("/dashboard/materials");
     return { ok: true, message: `商品「${data.name}」已更新` };
   } catch (err) {
     return toFormError(err);

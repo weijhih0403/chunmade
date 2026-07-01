@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listSuppliers } from "@/modules/purchasing/service";
 import { deleteSupplierAction } from "@/modules/purchasing/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, THead, TH, TR, TD, EmptyState } from "@/components/ui/table";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { SupplierForm } from "./supplier-form";
 
 export const dynamic = "force-dynamic";
@@ -43,17 +44,34 @@ export default async function SuppliersPage() {
             {suppliers.map((s) => (
               <TR key={s.id}>
                 <TD className="font-mono text-xs">{s.code}</TD>
-                <TD className="font-medium text-gray-900">{s.name}</TD>
+                <TD className="font-medium text-gray-900">
+                  <Link href={`/dashboard/suppliers/${s.id}`} className="hover:text-amber-700">
+                    {s.name}
+                  </Link>
+                </TD>
                 <TD>{s.contact ?? "—"}</TD>
                 <TD>{s.phone ?? "—"}</TD>
                 {canManage && (
                   <TD>
-                    <form action={deleteSupplierAction}>
-                      <input type="hidden" name="supplierId" value={s.id} />
-                      <SubmitButton variant="ghost" size="sm" pendingText="刪除中…">
-                        <span className="text-red-600">刪除</span>
-                      </SubmitButton>
-                    </form>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/dashboard/suppliers/${s.id}/edit`}
+                        className="text-amber-700 hover:underline"
+                      >
+                        編輯
+                      </Link>
+                      <form action={deleteSupplierAction}>
+                        <input type="hidden" name="supplierId" value={s.id} />
+                        <ConfirmSubmitButton
+                          variant="ghost"
+                          size="sm"
+                          pendingText="刪除中…"
+                          confirmMessage={`確定要刪除供應商「${s.name}」？`}
+                        >
+                          <span className="text-red-600">刪除</span>
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   </TD>
                 )}
               </TR>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import {
   listStockOverview,
@@ -41,7 +42,11 @@ export default async function InventoryPage() {
 
       {lowCount > 0 && (
         <div className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
-          有 <span className="font-bold">{lowCount}</span> 項商品低於補貨點，建議建立採購單。
+          有 <span className="font-bold">{lowCount}</span> 項商品低於補貨點，建議{" "}
+          <Link href="/dashboard/purchases/new" className="font-medium text-amber-900 underline">
+            建立採購單
+          </Link>
+          。
         </div>
       )}
 

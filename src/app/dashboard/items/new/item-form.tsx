@@ -34,12 +34,16 @@ export function ItemForm({
   action,
   defaults,
   submitLabel = "建立商品",
+  defaultType = "SALE_ITEM",
+  returnTo = "/dashboard/items",
 }: {
   categories: Option[];
   units: Option[];
   action: Action;
   defaults?: ItemDefaults;
   submitLabel?: string;
+  defaultType?: string;
+  returnTo?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialFormState);
   const router = useRouter();
@@ -47,10 +51,10 @@ export function ItemForm({
 
   useEffect(() => {
     if (state.ok) {
-      const t = setTimeout(() => router.push("/dashboard/items"), 800);
+      const t = setTimeout(() => router.push(returnTo), 800);
       return () => clearTimeout(t);
     }
-  }, [state.ok, router]);
+  }, [state.ok, router, returnTo]);
 
   const err = (f: string) => state.fieldErrors?.[f]?.[0];
 
@@ -79,7 +83,7 @@ export function ItemForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="type">品項類型</Label>
-          <Select id="type" name="type" defaultValue={defaults?.type ?? "SALE_ITEM"}>
+          <Select id="type" name="type" defaultValue={defaults?.type ?? defaultType}>
             {Object.entries(ITEM_TYPE_LABELS).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}

@@ -35,15 +35,25 @@ export default async function RecipesPage() {
               <TH>產出品項</TH>
               <TH>版本數</TH>
               <TH>狀態</TH>
+              <TH></TH>
             </tr>
           </THead>
           <tbody>
             {recipes.map((r) => (
               <TR key={r.id}>
-                <TD className="font-medium text-gray-900">{r.name}</TD>
+                <TD className="font-medium text-gray-900">
+                  <Link href={`/dashboard/recipes/${r.id}`} className="hover:text-amber-700">
+                    {r.name}
+                  </Link>
+                </TD>
                 <TD>{r.product.name}</TD>
                 <TD>{r.versions.length}</TD>
                 <TD>{r.isActive ? <Badge color="green">啟用</Badge> : <Badge>停用</Badge>}</TD>
+                <TD>
+                  <Link href={`/dashboard/recipes/${r.id}`} className="text-amber-700 hover:underline">
+                    開啟
+                  </Link>
+                </TD>
               </TR>
             ))}
           </tbody>

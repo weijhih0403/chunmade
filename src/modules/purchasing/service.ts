@@ -10,6 +10,11 @@ export async function listSuppliers(actor: Actor) {
   });
 }
 
+export async function getSupplier(actor: Actor, id: string) {
+  const scope = companyScope(actor);
+  return prisma.supplier.findFirst({ where: { ...scope, id, deletedAt: null } });
+}
+
 export async function listPurchaseOrders(actor: Actor) {
   const scope = companyScope(actor);
   return prisma.purchaseOrder.findMany({

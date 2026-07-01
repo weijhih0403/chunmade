@@ -7,16 +7,31 @@ import { ItemForm } from "./item-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewItemPage() {
+export default async function NewItemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
+  const fromMaterials = from === "materials";
   const actor = await requirePermission("catalog.manage");
   const { categories, units } = await getCatalogFormData(actor);
 
   return (
     <div className="space-y-4">
-      <BackButton fallbackHref="/dashboard/items" />
-      <PageHeader title="新增商品" description="建立原料 / 半成品 / 成品 / 銷售商品" />
+      <BackButton fallbackHref={fromMaterials ? "/dashboard/materials" : "/dashboard/items"} />
+      <PageHeader
+        title={fromMaterials ? "新增原物料" : "新增商品"}
+        description={
+          fromMaterials
+            ? "建立原料或半成品"
+            : "建立成品 / 銷售商品 / 服務項目"
+        }
+      />
       <ItemForm
         action={createItemAction}
+        defaultType={fromMaterials ? "RAW_MATERIAL" : "SALE_ITEM"}
+        returnTo={fromMaterials ? "/dashboard/materials" : "/dashboard/items"}
         categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         units={units.map((u) => ({ id: u.id, name: u.name }))}
       />
