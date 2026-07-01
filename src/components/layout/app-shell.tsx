@@ -93,7 +93,7 @@ function currentPageLabel(pathname: string, items: NavItem[]) {
   const match = items
     .filter((item) => isActive(pathname, item.href))
     .sort((a, b) => b.href.length - a.href.length)[0];
-  return match?.label ?? "淳手作門市管理";
+  return match?.label ?? "淳手作管理系統";
 }
 
 export function AppShell({
@@ -144,7 +144,7 @@ export function AppShell({
               : "h-14 items-center justify-between gap-2 px-3",
           )}
         >
-          <BrandMark collapsed={collapsed} />
+          <BrandMark collapsed={collapsed} showSystemTitle />
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -167,7 +167,7 @@ export function AppShell({
           />
           <aside className="absolute left-0 top-0 flex h-full w-64 max-w-[80%] flex-col border-r border-gray-200 bg-white shadow-xl">
             <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-              <BrandMark />
+              <BrandMark showSystemTitle />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
@@ -195,7 +195,7 @@ export function AppShell({
             </button>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-gray-900">{pageTitle}</p>
-              <p className="hidden truncate text-xs text-gray-400 sm:block">淳手作門市管理</p>
+              <p className="hidden truncate text-xs text-gray-400 sm:block">淳手作管理系統</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-3 sm:gap-4">

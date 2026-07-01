@@ -5,12 +5,37 @@ import { cn } from "@/lib/utils";
 export function BrandMark({
   collapsed = false,
   centered = false,
+  showSystemTitle = false,
   className,
 }: {
   collapsed?: boolean;
   centered?: boolean;
+  /** 側欄用：小圖示 + 「淳手作管理系統」 */
+  showSystemTitle?: boolean;
   className?: string;
 }) {
+  if (showSystemTitle && !collapsed && !centered) {
+    return (
+      <Link
+        href="/dashboard"
+        className={cn("flex min-w-0 items-center gap-2", className)}
+        title="淳手作管理系統"
+      >
+        <Image
+          src="/brand-icon.png"
+          alt="淳手作"
+          width={36}
+          height={36}
+          className="h-9 w-9 shrink-0 object-contain"
+          priority
+        />
+        <span className="truncate text-sm font-bold leading-snug text-amber-900">
+          淳手作管理系統
+        </span>
+      </Link>
+    );
+  }
+
   return (
     <Link
       href="/dashboard"
