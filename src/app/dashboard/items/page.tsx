@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { requirePermission } from "@/lib/permissions";
 import { listItems } from "@/modules/catalog/service";
+import { deleteItemAction } from "@/modules/catalog/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { Table, THead, TH, TR, TD, EmptyState, Badge } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { formatTWD } from "@/lib/money";
 import { ITEM_TYPE_LABELS } from "@/lib/constants";
 
@@ -45,7 +47,7 @@ export default async function ItemsPage() {
               <TH className="text-right">售價</TH>
               <TH className="text-right">標準成本</TH>
               <TH>庫管</TH>
-              {canManage && <TH></TH>}
+              {canManage && <TH>操作</TH>}
             </tr>
           </THead>
           <tbody>
@@ -65,12 +67,25 @@ export default async function ItemsPage() {
                 </TD>
                 {canManage && (
                   <TD>
-                    <Link
-                      href={`/dashboard/items/${it.id}/edit`}
-                      className="text-amber-700 hover:underline"
-                    >
-                      編輯
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/dashboard/items/${it.id}/edit`}
+                        className="text-amber-700 hover:underline"
+                      >
+                        編輯
+                      </Link>
+                      <form action={deleteItemAction}>
+                        <input type="hidden" name="itemId" value={it.id} />
+                        <ConfirmSubmitButton
+                          variant="ghost"
+                          size="sm"
+                          pendingText="刪除中…"
+                          confirmMessage={`確定要刪除商品「${it.name}」？`}
+                        >
+                          <span className="text-red-600">刪除</span>
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   </TD>
                 )}
               </TR>

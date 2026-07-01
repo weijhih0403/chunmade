@@ -144,6 +144,36 @@ export async function updateItemAction(_prev: FormState, formData: FormData): Pr
   }
 }
 
+/** 刪除商品：軟刪除（歷史單據仍保留參照） */
+export async function deleteItemAction(formData: FormData) {
+  const actor = await requirePermission("catalog.manage");
+  const scope = companyScope(actor);
+  const id = String(formData.get("itemId") ?? "");
+
+  const item = await prisma.item.findFirst({
+    where: { ...scope, id, deletedAt: null },
+  });
+  if (!item) throw new NotFoundError("找不到商品");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.item.update({
+      where: { id: item.id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    await writeAudit(tx, {
+      companyId: scope.companyId,
+      userId: actor.id,
+      action: "DELETE",
+      entityType: "Item",
+      entityId: item.id,
+      before: { sku: item.sku, name: item.name, type: item.type },
+    });
+  });
+
+  revalidatePath("/dashboard/items");
+  revalidatePath("/dashboard/materials");
+}
+
 export async function createCategoryAction(
   _prev: FormState,
   formData: FormData,
