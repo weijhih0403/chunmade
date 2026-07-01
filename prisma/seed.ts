@@ -128,7 +128,7 @@ async function main() {
         status: "APPROVED",
         approvedAt: new Date(),
       },
-      update: { status: "APPROVED", companyId: company.id },
+      update: { status: "APPROVED", companyId: company.id, name },
     });
     await prisma.userRole.deleteMany({ where: { userId: user.id } });
     for (const r of roles) {
