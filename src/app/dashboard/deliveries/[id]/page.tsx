@@ -40,7 +40,7 @@ export default async function DeliveryDetailPage({
       <BackButton fallbackHref="/dashboard/deliveries" />
       <PageHeader
         title={`${note.store.name} 送貨單`}
-        description={`${note.deliveryNo} · ${formatDate(note.deliveryDate)}`}
+        description={`${note.deliveryNo} · ${formatDate(note.deliveryDate)}${note.note ? ` · ${note.note}` : ""}`}
         action={
           canManage && total > 0 ? (
             <form action={resetDeliveryNoteAction}>
@@ -61,7 +61,7 @@ export default async function DeliveryDetailPage({
           進度 {delivered} / {total}
         </span>
         {canToggle && (
-          <span className="text-gray-400">點擊品項可切換已送 / 未送</span>
+          <span className="text-gray-400">點擊品項切換已送／未送（未送項目在上方）</span>
         )}
       </div>
 

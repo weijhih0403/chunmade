@@ -44,14 +44,21 @@ export function DeliveryChecklist({
   if (lines.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
-        尚無品項，請由管理員新增送貨明細。
+        昨日盤點無叫貨項目，或送貨單尚未產生。
       </p>
     );
   }
 
+  const sorted = [...lines].sort((a, b) => {
+    const ad = local[a.id] ?? a.isDelivered;
+    const bd = local[b.id] ?? b.isDelivered;
+    if (ad === bd) return 0;
+    return ad ? 1 : -1;
+  });
+
   return (
     <ul className="space-y-2">
-      {lines.map((line) => {
+      {sorted.map((line) => {
         const delivered = local[line.id] ?? line.isDelivered;
         return (
           <li key={line.id}>
@@ -70,18 +77,15 @@ export function DeliveryChecklist({
             >
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{line.name}</p>
-                {(line.note || line.quantity !== "1") && (
-                  <p
-                    className={cn(
-                      "mt-0.5 text-sm",
-                      delivered ? "text-gray-300" : "text-gray-500",
-                    )}
-                  >
-                    {line.quantity}
-                    {line.unit}
-                    {line.note ? ` · ${line.note}` : ""}
-                  </p>
-                )}
+                <p
+                  className={cn(
+                    "mt-0.5 text-sm",
+                    delivered ? "text-gray-300" : "text-gray-500",
+                  )}
+                >
+                  數量 {line.quantity} {line.unit}
+                  {line.note ? ` · ${line.note}` : ""}
+                </p>
               </div>
               <span
                 className={cn(

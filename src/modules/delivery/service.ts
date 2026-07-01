@@ -2,8 +2,27 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { startOfBusinessDay } from "@/lib/dates";
 import { type Actor, assertStoreAccess, companyScope } from "@/lib/permissions";
+import { getYesterdayOrderPreview } from "./generate-from-count";
 
-export async function listStoresWithTodayDeliveries(actor: Actor) {
+export type StoreDeliveryRow = {
+  store: { id: string; name: string; code: string };
+  note: {
+    id: string;
+    deliveryNo: string;
+    status: string;
+    total: number;
+    delivered: number;
+  } | null;
+  preview: {
+    countDateLabel: string;
+    countNos: string[];
+    orderItemCount: number;
+    hasWarehouse: boolean;
+    hasCount: boolean;
+  };
+};
+
+export async function listStoresWithTodayDeliveries(actor: Actor): Promise<StoreDeliveryRow[]> {
   const scope = companyScope(actor);
   const today = startOfBusinessDay();
 
@@ -36,11 +55,13 @@ export async function listStoresWithTodayDeliveries(actor: Actor) {
 
   const noteByStore = new Map(notes.map((n) => [n.storeId, n]));
 
-  return visibleStores.map((store) => {
+  const rows: StoreDeliveryRow[] = [];
+  for (const store of visibleStores) {
     const note = noteByStore.get(store.id);
     const total = note?.items.length ?? 0;
     const delivered = note?.items.filter((i) => i.isDelivered).length ?? 0;
-    return {
+    const preview = await getYesterdayOrderPreview(actor, store.id);
+    rows.push({
       store,
       note: note
         ? {
@@ -51,8 +72,10 @@ export async function listStoresWithTodayDeliveries(actor: Actor) {
             delivered,
           }
         : null,
-    };
-  });
+      preview,
+    });
+  }
+  return rows;
 }
 
 export async function getDeliveryNote(actor: Actor, id: string) {

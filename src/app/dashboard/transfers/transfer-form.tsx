@@ -48,7 +48,15 @@ export function TransferForm({ warehouses, items }: { warehouses: Opt[]; items: 
         </div>
         <div>
           <Label>數量</Label>
-          <Input name="quantity" type="number" step="0.0001" required />
+          <Input
+            name="quantity"
+            type="number"
+            min={1}
+            step={1}
+            defaultValue={1}
+            inputMode="numeric"
+            required
+          />
         </div>
       </div>
       <div className="flex items-center gap-3">

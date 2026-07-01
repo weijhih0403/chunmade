@@ -4,9 +4,6 @@
   "private": true,
   "description": "淳手作 ERP 系統 - 手作食品 / 飲料門市 ERP（多門市、多倉庫）",
   "type": "module",
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma migrate deploy && prisma generate && next build",

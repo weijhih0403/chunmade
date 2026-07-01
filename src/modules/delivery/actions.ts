@@ -13,6 +13,7 @@ import {
   requirePermission,
 } from "@/lib/permissions";
 import { nextDocumentNo } from "@/server/services/sequence";
+import { ensureDeliveryFromYesterdayCount } from "./generate-from-count";
 import { addDeliveryItemsSchema, createDeliveryNoteSchema } from "./schemas";
 
 function parseLines(raw: string) {
@@ -201,4 +202,42 @@ export async function resetDeliveryNoteAction(formData: FormData) {
 
   revalidatePath("/dashboard/deliveries");
   revalidatePath(`/dashboard/deliveries/${id}`);
+}
+
+export async function generateDeliveryFromCountAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  try {
+    const actor = await requirePermission("delivery.manage");
+    const storeId = String(formData.get("storeId") ?? "");
+    if (!storeId) throw new ConflictError("請指定門市");
+
+    const result = await ensureDeliveryFromYesterdayCount(actor, storeId);
+    revalidatePath("/dashboard/deliveries");
+
+    if (!result.ok) {
+      return { ok: false, message: result.reason };
+    }
+    if (result.created) {
+      return {
+        ok: true,
+        message: `已依昨日盤點產生送貨單 ${result.deliveryNo}（${result.itemCount} 項）`,
+      };
+    }
+    switch (result.reason) {
+      case "exists":
+        return { ok: true, message: "今日送貨單已存在" };
+      case "no_warehouse":
+        return { ok: false, message: "此門市尚未設定倉庫，無法對應盤點資料" };
+      case "no_count":
+        return { ok: false, message: "昨日尚無完成的盤點單" };
+      case "no_order":
+        return { ok: false, message: "昨日盤點沒有叫貨項目（要叫的貨皆為 0）" };
+      default:
+        return { ok: false, message: "無法產生送貨單" };
+    }
+  } catch (err) {
+    return toFormError(err);
+  }
 }
